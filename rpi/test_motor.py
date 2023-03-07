@@ -1,5 +1,6 @@
 import itertools
 import struct
+import sys
 import time
 from collections import namedtuple
 
@@ -10,7 +11,9 @@ DEVICE_MOTOR_L = 1
 DEVICE_MOTOR_R = 2
 DEVICE_CAM_SERVO_H = 3
 DEVICE_CAM_SERVO_V = 4
-DEVICE_VOLAGE = 5
+DEVICE_CAM_SERVO_MOVE_H = 5
+DEVICE_CAM_SERVO_MOVE_V = 6
+DEVICE_VOLAGE = 7
 
 MESSAGE_MAGICK = b'c'
 MessageTuple = namedtuple('MessageTuple', ['magick', 'device', 'value'])
@@ -75,6 +78,14 @@ def test_servos(ser):
             time.sleep(0.02)
 
 
+def test_servos_move(ser):
+    for device in (DEVICE_CAM_SERVO_MOVE_H, DEVICE_CAM_SERVO_MOVE_V):
+        for value in (1, -1, 0):
+            msg = new_message(device, value)
+            print(device, value, ser.write(dump_message(msg)))
+            time.sleep(5)
+
+
 def test_voltage(ser):
     for count in range(10):
         msg = new_message(DEVICE_VOLAGE, 0)
@@ -87,12 +98,13 @@ def test_voltage(ser):
         print(DEVICE_VOLAGE, msg)
 
 
-def main():
-    with serial.Serial('/dev/serial0', 9600, timeout=3) as ser:
+def main(argv):
+    with serial.Serial(argv[1], 9600, timeout=3) as ser:
         #test_motors(ser)
-        test_servos(ser)
+        #test_servos(ser)
+        test_servos_move(ser)
         #test_voltage(ser)
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)

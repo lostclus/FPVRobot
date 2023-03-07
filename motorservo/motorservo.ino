@@ -16,7 +16,9 @@
 #define DEVICE_MOTOR_R 2
 #define DEVICE_CAM_SERVO_H 3
 #define DEVICE_CAM_SERVO_V 4
-#define DEVICE_VOLAGE  5
+#define DEVICE_CAM_SERVO_MOVE_H 5
+#define DEVICE_CAM_SERVO_MOVE_V 6
+#define DEVICE_VOLAGE  7
 
 const char CONTROL_MAGICK = 'c';
 
@@ -28,6 +30,9 @@ struct {
 
 Servo camServoH;
 Servo camServoV;
+int camServoMoveH = 0,
+    camServoMoveV = 0;
+unsigned long servoTime = 0;
 unsigned long lastControl = 0;
 
 
@@ -107,9 +112,17 @@ void controlCamServo(Servo &servo) {
     servo.write(constrain(control.value, 5, 175));
 }
 
-void stopCamServos() {
-    camServoH.write(90);
-    camServoV.write(90);
+void controlCamServoMove(int &mv) {
+    mv = control.value;
+}
+
+void controlCamServoMoveLoop(Servo &servo, int &mv) {
+    servo.write(constrain(servo.read() + mv, 5, 175));
+}
+
+void resetCamServo(Servo &servo, int &mv) {
+    servo.write(90);
+    mv = 0;
 }
 
 void controlVoltage() {
@@ -148,6 +161,12 @@ void loop() {
             case DEVICE_CAM_SERVO_V:
                 controlCamServo(camServoV);
                 break;
+            case DEVICE_CAM_SERVO_MOVE_H:
+                controlCamServoMove(camServoMoveH);
+                break;
+            case DEVICE_CAM_SERVO_MOVE_V:
+                controlCamServoMove(camServoMoveV);
+                break;
             case DEVICE_VOLAGE:
                 controlVoltage();
                 break;
@@ -159,8 +178,15 @@ void loop() {
         if (now - lastControl > 3000) {
             // lost control
             stopMotors();
-            stopCamServos();
+            resetCamServo(camServoH, camServoMoveH);
+            resetCamServo(camServoV, camServoMoveV);
         }
+    }
+
+    if (now - servoTime > 30) {
+        controlCamServoMoveLoop(camServoH, camServoMoveH);
+        controlCamServoMoveLoop(camServoV, camServoMoveV);
+        servoTime = now;
     }
 }
 
