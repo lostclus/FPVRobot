@@ -6,12 +6,15 @@ from aiohttp import MultipartWriter, WSMsgType, web
 
 from .motor_servo import write_value
 
+ROOT_PATH = Path(__file__).parent
+
 routes = web.RouteTableDef()
+routes.static('/static', ROOT_PATH / 'static')
 
 
 @routes.get('/')
 async def index(request):
-    with open(Path(__file__).parent / 'index.html') as fp:
+    with open(ROOT_PATH / 'index.html') as fp:
         text = fp.read()
     return web.Response(
         text=text,
