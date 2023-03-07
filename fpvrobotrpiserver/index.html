@@ -1,8 +1,36 @@
 <html>
     <head>
 	<title>FPV Robot</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+        <script type="text/javascript">
+            function sendMessage(device, value) {
+                $.post(
+                    "motor-servo",
+                    JSON.stringify(
+                        {
+                            "device": device,
+                            "value": value,
+                        },
+                    ),
+                );
+            }
+
+            function servoLeft() {
+                sendMessage(3, 100);
+            };
+
+            function servoRight() {
+                sendMessage(3, 80);
+            };
+        </script>
     </head>
     <body>
-	<img src="stream.mjpg" width="640" height="480" />
+        <div>
+            <img src="stream.mjpg" width="640" height="480" />
+        </div>
+        <div>
+            <button onclick="servoLeft();">Left servo</button>
+            <button onclick="servoRight();">Right servo</button>
+        </div>
     </body>
 </html>

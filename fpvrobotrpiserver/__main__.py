@@ -3,5 +3,5 @@ from aiohttp import web
 from .app import create_app
 
 
-app = create_app()
-web.run_app(app)
+with create_app() as app:
+    web.run_app(app)

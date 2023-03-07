@@ -4,6 +4,8 @@ from pathlib import Path
 from aiohttp import web
 from aiohttp import MultipartWriter
 
+from .motor_servo import new_message, write_message
+
 routes = web.RouteTableDef()
 
 
@@ -44,3 +46,12 @@ async def stream_mjpg(request):
         return resp
     finally:
         request.app['streams'].discard(resp)
+
+
+@routes.post('/motor-servo')
+async def motor_servo(request):
+    ser = request.app['motor_servo_serial']
+    data = await request.json()
+    msg = new_message(device=data['device'], value=data['value'])
+    await write_message(ser, msg)
+    return web.json_response({"ok": True})
