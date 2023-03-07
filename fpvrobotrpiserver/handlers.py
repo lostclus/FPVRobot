@@ -1,8 +1,8 @@
 import asyncio
+import json
 from pathlib import Path
 
-from aiohttp import web
-from aiohttp import MultipartWriter
+from aiohttp import MultipartWriter, WSMsgType, web
 
 from .motor_servo import new_message, write_message
 
@@ -55,3 +55,32 @@ async def motor_servo(request):
     msg = new_message(device=data['device'], value=data['value'])
     await write_message(ser, msg)
     return web.json_response({"ok": True})
+
+
+@routes.get('/ws')
+async def ws(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    request.app['websockets'].add(ws)
+    try:
+        async for ws_msg in ws:
+            if ws_msg.type == WSMsgType.TEXT:
+                data = json.loads(ws_msg.data)
+
+                if data['type'] == 'close':
+                    await ws.close()
+                elif data['type'] == 'device':
+                    ser = request.app['motor_servo_serial']
+                    dev_msg = new_message(
+                        device=data['device'],
+                        value=data['value'],
+                    )
+                    await write_message(ser, dev_msg)
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                print('ws connection closed with exception %s' %
+                      ws.exception())
+
+        return ws
+    finally:
+        request.app['websockets'].discard(ws)

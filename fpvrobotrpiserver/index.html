@@ -3,16 +3,24 @@
 	<title>FPV Robot</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
         <script type="text/javascript">
+	    const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
+	    const socket = new WebSocket(wsAddr);
+
             function sendMessage(device, value) {
+                var payload = JSON.stringify(
+                    {
+                        "type": "device",
+                        "device": device,
+                        "value": value,
+                    },
+                );
+                /*
                 $.post(
                     "motor-servo",
-                    JSON.stringify(
-                        {
-                            "device": device,
-                            "value": value,
-                        },
-                    ),
+                    payload,
                 );
+               */
+                socket.send(payload);
             }
 
             function servoLeft() {
