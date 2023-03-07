@@ -6,7 +6,9 @@ DEVICE_MOTOR_L = 1
 DEVICE_MOTOR_R = 2
 DEVICE_CAM_SERVO_H = 3
 DEVICE_CAM_SERVO_V = 4
-DEVICE_VOLAGE = 5
+DEVICE_CAM_SERVO_MOVE_H = 5
+DEVICE_CAM_SERVO_MOVE_V = 6
+DEVICE_VOLAGE = 7
 
 MESSAGE_MAGICK = b'c'
 MessageTuple = namedtuple('MessageTuple', ['magick', 'device', 'value'])
@@ -47,3 +49,8 @@ async def read_message(ser):
 
 async def write_message(ser, msg):
     return await ser.write_async(dump_message(msg))
+
+
+async def write_value(ser, device, value):
+    msg = new_message(device, value)
+    await write_message(ser, msg)

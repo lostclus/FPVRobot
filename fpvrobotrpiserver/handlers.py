@@ -4,7 +4,7 @@ from pathlib import Path
 
 from aiohttp import MultipartWriter, WSMsgType, web
 
-from .motor_servo import new_message, write_message
+from .motor_servo import write_value
 
 routes = web.RouteTableDef()
 
@@ -67,16 +67,14 @@ async def ws(request):
         async for ws_msg in ws:
             if ws_msg.type == WSMsgType.TEXT:
                 data = json.loads(ws_msg.data)
+                ser = request.app['motor_servo_serial']
 
-                if data['type'] == 'close':
+                if data['type'] == 'ping':
+                    await write_value(ser, 0, 0)
+                elif data['type'] == 'close':
                     await ws.close()
                 elif data['type'] == 'device':
-                    ser = request.app['motor_servo_serial']
-                    dev_msg = new_message(
-                        device=data['device'],
-                        value=data['value'],
-                    )
-                    await write_message(ser, dev_msg)
+                    await write_value(ser, data['device'], data['value'])
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())

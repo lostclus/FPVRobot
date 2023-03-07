@@ -6,7 +6,7 @@
 	    const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
 	    const socket = new WebSocket(wsAddr);
 
-            function sendMessage(device, value) {
+            function sendDeviceMessage(device, value) {
                 var payload = JSON.stringify(
                     {
                         "type": "device",
@@ -23,13 +23,28 @@
                 socket.send(payload);
             }
 
-            function servoLeft() {
-                sendMessage(3, 100);
+            function sendPing() {
+                var payload = JSON.stringify(
+                    {
+                        "type": "ping",
+                    },
+                );
+                socket.send(payload);
+	    }
+
+            function camServoHLeft() {
+                sendDeviceMessage(5, 1);
             };
 
-            function servoRight() {
-                sendMessage(3, 80);
+            function camServoHRight() {
+                sendDeviceMessage(5, -1);
             };
+
+            function camServoHStop() {
+                sendDeviceMessage(5, 0);
+            };
+
+	    setInterval(sendPing, 1000);
         </script>
     </head>
     <body>
@@ -37,8 +52,9 @@
             <img src="stream.mjpg" width="640" height="480" />
         </div>
         <div>
-            <button onclick="servoLeft();">Left servo</button>
-            <button onclick="servoRight();">Right servo</button>
+            <button onclick="camServoHLeft();">Left servo</button>
+            <button onclick="camServoHStop();">Stop servo</button>
+            <button onclick="camServoHRight();">Right servo</button>
         </div>
     </body>
 </html>
