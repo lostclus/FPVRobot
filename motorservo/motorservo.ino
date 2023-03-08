@@ -20,13 +20,18 @@
 #define DEVICE_CAM_SERVO_MOVE_V 6
 #define DEVICE_VOLAGE  7
 
-const char CONTROL_MAGICK = 'c';
+const char CONTROL_MAGICK[4] = "FpvB";
+#define CONTROL_MAGICK_SIZE sizeof(CONTROL_MAGICK)
+#define CONTROL_MAGICK_LEN  (sizeof(CONTROL_MAGICK) / sizeof(CONTROL_MAGICK[0]))
 
 struct {
-    char magick;
-    byte device;
+    char magick[4];
+    int device;
     int value;
 } control;
+
+#define CONTROL_SIZE sizeof(control)
+#define CONTROL_NO_MAGICK_SIZE (sizeof(control) - sizeof(CONTROL_MAGICK))
 
 Servo camServoH;
 Servo camServoV;
@@ -70,22 +75,32 @@ unsigned int getVoltage() {
 }
 
 bool readControl() {
+   int i = 0;
+
+   if (Serial.available() <= CONTROL_MAGICK_SIZE)
+       return false;
+
    while (true) {
-       switch (Serial.peek()) {
-           case -1:
-               return false;
-           case CONTROL_MAGICK:
-               break;
-           default:
-               Serial.read();
-               continue;
+       if (Serial.readBytes((byte*)&control.magick[i], 1) != 1)
+           return false;
+
+       if (control.magick[i] != CONTROL_MAGICK[i]) {
+           if (control.magick[i] == CONTROL_MAGICK[0]) {
+             control.magick[0] = CONTROL_MAGICK[0];
+             i = 1;
+           } else {
+             i = 0;
+           }
+           continue;
        }
+       if (++i < CONTROL_MAGICK_LEN)
+           continue;
        break;
    }
 
-   return Serial.readBytes((byte*)&control, sizeof(control))
-          == sizeof(control)
-          && control.magick == CONTROL_MAGICK;
+   return Serial.readBytes(
+       ((byte*)&control) + CONTROL_MAGICK_SIZE,
+       CONTROL_NO_MAGICK_SIZE) == CONTROL_NO_MAGICK_SIZE;
 }
 
 void controlMotor(int in1, int in2) {
@@ -117,7 +132,8 @@ void controlCamServoMove(int &mv) {
 }
 
 void controlCamServoMoveLoop(Servo &servo, int &mv) {
-    servo.write(constrain(servo.read() + mv, 5, 175));
+    if (mv != 0)
+        servo.write(constrain(servo.read() + mv, 5, 175));
 }
 
 void resetCamServo(Servo &servo, int &mv) {
@@ -127,12 +143,12 @@ void resetCamServo(Servo &servo, int &mv) {
 
 void controlVoltage() {
     control.value = getVoltage();
-    Serial.write((byte*)&control, sizeof(control));
-    Serial.flush();
+    Serial.write((byte*)&control, CONTROL_SIZE);
 }
 
 void setup() {
     Serial.begin(9600);
+    Serial.setTimeout(100);
     pinMode(MOTOR_DRV_IN1, OUTPUT);
     pinMode(MOTOR_DRV_IN2, OUTPUT);
     pinMode(MOTOR_DRV_IN3, OUTPUT);
@@ -171,7 +187,7 @@ void loop() {
                 controlVoltage();
                 break;
         }
-    } else {
+    } else if (lastControl > 0) {
         if (now - lastControl > 500) {
             digitalWrite(LED_BUILTIN, LOW);
         }

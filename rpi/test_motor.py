@@ -15,9 +15,9 @@ DEVICE_CAM_SERVO_MOVE_H = 5
 DEVICE_CAM_SERVO_MOVE_V = 6
 DEVICE_VOLAGE = 7
 
-MESSAGE_MAGICK = b'c'
+MESSAGE_MAGICK = b'FpvB'
 MessageTuple = namedtuple('MessageTuple', ['magick', 'device', 'value'])
-message_struct = struct.Struct('<cBh')
+message_struct = struct.Struct('<4shh')
 
 
 def load_message(buffer):
@@ -41,15 +41,25 @@ def message_size():
 
 
 def read_message(ser):
-    while True:
-        if ser.in_waiting == 0:
-            return None
-        buffer = ser.read(1)
-        if buffer == MESSAGE_MAGICK:
-            break
-    buffer += ser.read(message_size() - 1)
+    if ser.in_waiting < message_size():
+        return None
+    buffer = ser.read(len(MESSAGE_MAGICK))
+    if buffer != MESSAGE_MAGICK:
+        return None
+    buffer += ser.read(message_size() - len(MESSAGE_MAGICK))
     msg = load_message(buffer)
     return msg
+
+
+def write_message(ser, msg):
+    count = ser.write(dump_message(msg))
+    print(msg.device, msg.value, count)
+    return count
+
+
+def write_value(ser, device, value):
+    msg = new_message(device=device, value=value)
+    return write_message(ser, msg)
 
 
 def test_motors(ser):
@@ -60,8 +70,7 @@ def test_motors(ser):
             range(0, -256, -8),
             range(-255, 0, 8),
         ):
-            msg = new_message(device, value)
-            print(device, value, ser.write(dump_message(msg)))
+            write_value(ser, device, value)
             time.sleep(0.1)
 
 
@@ -73,37 +82,39 @@ def test_servos(ser):
             range(90, 5, -1),
             range(5, 90, 1),
         ):
-            msg = new_message(device, value)
-            print(device, value, ser.write(dump_message(msg)))
+            write_value(ser, device, value)
             time.sleep(0.02)
 
 
 def test_servos_move(ser):
     for device in (DEVICE_CAM_SERVO_MOVE_H, DEVICE_CAM_SERVO_MOVE_V):
         for value in (1, -1, 0):
-            msg = new_message(device, value)
-            print(device, value, ser.write(dump_message(msg)))
-            time.sleep(5)
+            write_value(ser, device, value)
+            if value == 0:
+                time.sleep(1)
+            else:
+                time.sleep(5)
 
 
 def test_voltage(ser):
     for count in range(10):
-        msg = new_message(DEVICE_VOLAGE, 0)
-        print(DEVICE_VOLAGE, ser.write(dump_message(msg)))
+        write_value(ser, DEVICE_VOLAGE, 0)
         for i in range(10):
-            time.sleep(0.1)
             msg = read_message(ser)
             if msg is not None:
                 break
+            time.sleep(0.01)
         print(DEVICE_VOLAGE, msg)
 
 
 def main(argv):
-    with serial.Serial(argv[1], 9600, timeout=3) as ser:
-        #test_motors(ser)
+    with serial.Serial(argv[1], 9600, timeout=0.1) as ser:
+        time.sleep(0.5)
+        write_value(ser, 0, 0)
+        test_motors(ser)
         #test_servos(ser)
         test_servos_move(ser)
-        #test_voltage(ser)
+        test_voltage(ser)
 
 
 if __name__ == '__main__':
