@@ -6,6 +6,8 @@ from picamera2 import Picamera2
 from picamera2.encoders import MJPEGEncoder
 from picamera2.outputs import FileOutput
 
+from .config import CAMERA_SIZE, CAMERA_TRANSFORM
+
 
 class StreamingOutput(io.BufferedIOBase):
     def __init__(self):
@@ -27,8 +29,8 @@ def create_camera():
     camera = Picamera2()
     camera.configure(
         camera.create_video_configuration(
-            main={'size': (640, 480)},
-            transform=Transform(hflip=True, vflip=True),
+            main={'size': CAMERA_SIZE},
+            transform=Transform(**CAMERA_TRANSFORM),
         )
     )
     camera.set_controls({'AwbEnable': True})

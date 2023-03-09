@@ -6,8 +6,15 @@ const DEVICE_CAM_SERVO_MOVE_H = 5;
 const DEVICE_CAM_SERVO_MOVE_V = 6;
 const DEVICE_VOLAGE = 7;
 
+const VOLTAGE_MEASUREMENTS = 5;
+
 const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
 const socket = new WebSocket(wsAddr);
+
+var lastKeyEventName = null;
+var lastKeyCode = null;
+var voltageArray = [];
+
 
 function sendDevMsg(device, value) {
     var payload = JSON.stringify(
@@ -29,7 +36,24 @@ function sendPing() {
     socket.send(payload);
 }
 
+function requestVoltage() {
+    sendDevMsg(DEVICE_VOLAGE, 0);
+}
+
+function requestVoltageAsync() {
+    voltageArray.length = 0;
+    for(var i = 0; i < VOLTAGE_MEASUREMENTS; i++)
+	setTimeout(requestVoltage, i * 10);
+}
+
 function onKeyEvent(eventName, event) {
+    if (eventName == lastKeyEventName && event.code == lastKeyCode) {
+       return;
+    }
+
+    lastKeyEventName = eventName;
+    lastKeyCode = event.code;
+
     var isUp = eventName == "keyup";
     var isDown = eventName == "keydown";
 
@@ -59,7 +83,27 @@ function onKeyEvent(eventName, event) {
     }
 }
 
-setInterval(sendPing, 1000);
+function onSocketMessage(event) {
+    var data = JSON.parse(event.data);
+    if (data.type == "device") {
+	if (data.device == DEVICE_VOLAGE) {
+	    voltageArray.push(data.value);
+	    while (voltageArray.length > VOLTAGE_MEASUREMENTS)
+		voltageArray.shift();
+	    if (voltageArray.length == VOLTAGE_MEASUREMENTS) {
+		const sum = voltageArray.reduce((s, a) => s + a, 0);
+		$("#voltage").text(
+		    Math.round(sum / voltageArray.length) / 1000
+		);
+	    }
+	}
+    }
+}
+
+
+setInterval(sendPing, 2000);
+setInterval(requestVoltageAsync, 30000);
+setTimeout(requestVoltageAsync, 500);
 
 document.addEventListener("keydown", (event) => {
     onKeyEvent("keydown", event);
@@ -67,3 +111,5 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("keyup", (event) => {
     onKeyEvent("keyup", event);
 });
+
+socket.addEventListener('message', onSocketMessage);

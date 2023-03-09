@@ -4,7 +4,7 @@ from pathlib import Path
 
 from aiohttp import MultipartWriter, WSMsgType, web
 
-from .motor_servo import write_value
+from .motor_servo import write_ping, write_value
 
 ROOT_PATH = Path(__file__).parent
 
@@ -36,7 +36,7 @@ async def stream_mjpg(request):
     await resp.prepare(request)
     loop = asyncio.get_running_loop()
     output = request.app['output']
-    request.app['streams'].add(resp)
+    request.app['tasks'].add(resp.task)
     try:
         while True:
             frame = await loop.run_in_executor(None, output.get_frame)
@@ -48,7 +48,7 @@ async def stream_mjpg(request):
             await resp.drain()
         return resp
     finally:
-        request.app['streams'].discard(resp)
+        request.app['tasks'].discard(resp.task)
 
 
 @routes.post('/motor-servo')
@@ -67,21 +67,21 @@ async def ws(request):
 
     request.app['websockets'].add(ws)
     try:
-        async for ws_msg in ws:
-            if ws_msg.type == WSMsgType.TEXT:
-                data = json.loads(ws_msg.data)
+        async for msg in ws:
+            if msg.type == WSMsgType.PING:
+                await ws.pong()
+            elif msg.type == WSMsgType.TEXT:
+                data = json.loads(msg.data)
                 ser = request.app['motor_servo_serial']
-
                 if data['type'] == 'ping':
-                    await write_value(ser, 0, 0)
-                elif data['type'] == 'close':
-                    await ws.close()
+                    await write_ping(ser)
                 elif data['type'] == 'device':
                     await write_value(ser, data['device'], data['value'])
+                elif data['type'] == 'close':
+                    await ws.close()
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
-
         return ws
     finally:
         request.app['websockets'].discard(ws)

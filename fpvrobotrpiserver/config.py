@@ -1,0 +1,9 @@
+MOTOR_SERVO_PORT = '/dev/serial0'
+MOTOR_SERVO_BAUDRATE = 9600
+MOTOR_SERVO_TIMEOUT = 0.1
+
+CAMERA_SIZE = (640, 480)
+CAMERA_TRANSFORM = {
+    'hflip': True,
+    'vflip': True,
+}

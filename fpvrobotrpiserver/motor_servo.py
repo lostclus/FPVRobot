@@ -1,5 +1,15 @@
+import asyncio
 import struct
 from collections import namedtuple
+from contextlib import contextmanager
+
+import aioserial
+
+from .config import (
+    MOTOR_SERVO_BAUDRATE,
+    MOTOR_SERVO_PORT,
+    MOTOR_SERVO_TIMEOUT,
+)
 
 DEVICE_PING = 0
 DEVICE_MOTOR_L = 1
@@ -10,9 +20,11 @@ DEVICE_CAM_SERVO_MOVE_H = 5
 DEVICE_CAM_SERVO_MOVE_V = 6
 DEVICE_VOLAGE = 7
 
-MESSAGE_MAGICK = b'c'
+MESSAGE_MAGICK = b'FpvB'
 MessageTuple = namedtuple('MessageTuple', ['magick', 'device', 'value'])
-message_struct = struct.Struct('<cBh')
+message_struct = struct.Struct('<4shh')
+
+write_lock = asyncio.Lock()
 
 
 def load_message(buffer):
@@ -36,21 +48,52 @@ def message_size():
 
 
 async def read_message(ser):
-    while True:
-        if ser.in_waiting == 0:
-            return None
-        buffer = await ser.read_async(1)
-        if buffer == MESSAGE_MAGICK:
-            break
-    buffer += await ser.read_async(message_size() - 1)
-    msg = load_message(buffer)
+    buf = None
+    while buf != MESSAGE_MAGICK:
+        buf = await ser.read_async(len(MESSAGE_MAGICK))
+    buf += await ser.read_async(message_size() - len(MESSAGE_MAGICK))
+    msg = load_message(buf)
     return msg
 
 
 async def write_message(ser, msg):
-    return await ser.write_async(dump_message(msg))
+    async with write_lock:
+        count = await ser.write_async(dump_message(msg))
+    return count
 
 
 async def write_value(ser, device, value):
     msg = new_message(device, value)
-    await write_message(ser, msg)
+    return await write_message(ser, msg)
+
+
+async def write_ping(ser):
+    await write_value(ser, DEVICE_PING, 0)
+
+
+async def messages_generator(ser):
+    while True:
+        msg = await read_message(ser)
+        yield msg
+
+
+async def process_messages(ser, app):
+    async for msg in messages_generator(ser):
+        if msg.device == DEVICE_VOLAGE:
+            for ws in set(app['websockets']):
+                data = {
+                    'type': 'device',
+                    'device': msg.device,
+                    'value': msg.value,
+                }
+                await ws.send_json(data)
+
+
+@contextmanager
+def create_serial():
+    with aioserial.AioSerial(
+        MOTOR_SERVO_PORT,
+        MOTOR_SERVO_BAUDRATE,
+        timeout=MOTOR_SERVO_TIMEOUT,
+    ) as ser:
+        yield ser
