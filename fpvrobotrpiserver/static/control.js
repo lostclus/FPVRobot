@@ -64,9 +64,9 @@ function onKeyEvent(eventName, event) {
         sendDevMsg(DEVICE_MOTOR_L, isDown ? -100 : 0);
         sendDevMsg(DEVICE_MOTOR_R, isDown ? -100 : 0);
     } else if (event.code == "KeyA") {
-        sendDevMsg(DEVICE_MOTOR_L, isDown ? 100 : 0);
-    } else if (event.code == "KeyD") {
         sendDevMsg(DEVICE_MOTOR_R, isDown ? 100 : 0);
+    } else if (event.code == "KeyD") {
+        sendDevMsg(DEVICE_MOTOR_L, isDown ? 100 : 0);
     } else if (event.code == "ArrowLeft") {
         sendDevMsg(DEVICE_CAM_SERVO_MOVE_H, isDown ? 1 : 0);
     } else if (event.code == "ArrowRight") {
