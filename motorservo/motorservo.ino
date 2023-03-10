@@ -12,34 +12,110 @@
 #define VOLTAGE_R1 20000L
 #define VOLTAGE_R2 10000L
 
-#define DEVICE_MOTOR_L 1
-#define DEVICE_MOTOR_R 2
-#define DEVICE_CAM_SERVO_H 3
-#define DEVICE_CAM_SERVO_V 4
-#define DEVICE_CAM_SERVO_MOVE_H 5
-#define DEVICE_CAM_SERVO_MOVE_V 6
-#define DEVICE_VOLAGE  7
+#define LIGHTING_PIN 2
 
-const char CONTROL_MAGICK[4] = "FpvB";
-#define CONTROL_MAGICK_SIZE sizeof(CONTROL_MAGICK)
-#define CONTROL_MAGICK_LEN  (sizeof(CONTROL_MAGICK) / sizeof(CONTROL_MAGICK[0]))
+#define MAGICK_STRING "FpvB"
+const char MAGICK[4] = MAGICK_STRING;
+#define MAGICK_SIZE sizeof(MAGICK)
+#define MAGICK_LEN  (sizeof(MAGICK) / sizeof(MAGICK[0]))
 
 struct {
     char magick[4];
-    int device;
-    int value;
-} control;
+    int motorL,
+        motorR,
+        camServoH,
+        camServoV,
+        lighting;
+} request;
+#define REQUEST_SIZE sizeof(request)
 
-#define CONTROL_SIZE sizeof(control)
-#define CONTROL_NO_MAGICK_SIZE (sizeof(control) - sizeof(CONTROL_MAGICK))
+unsigned long requestTime = 0;
+
+struct {
+    char magick[4] = MAGICK_STRING;
+    int camServoH,
+        camServoV,
+        voltage;
+} response;
+#define RESPONSE_SIZE sizeof(response)
 
 Servo camServoH;
 Servo camServoV;
 int camServoMoveH = 0,
     camServoMoveV = 0;
 unsigned long servoTime = 0;
-unsigned long lastControl = 0;
+#define CAM_SERVO_POS_BASE 1000
 
+unsigned int voltage[5] = {0, 0, 0, 0, 0};
+#define VOLTAGE_LEN (sizeof(voltage) / sizeof(voltage[0]))
+int voltagePos = 0;
+unsigned long voltageTime = 0;
+unsigned long voltagePosTime = 0;
+
+
+bool readRequest() {
+   int i = 0;
+
+   if (Serial.available() <= MAGICK_SIZE)
+       return false;
+
+   while (true) {
+       if (Serial.readBytes((byte*)&request.magick[i], 1) != 1)
+           return false;
+
+       if (request.magick[i] != MAGICK[i]) {
+           if (request.magick[i] == MAGICK[0]) {
+               request.magick[0] = MAGICK[0];
+               i = 1;
+           } else {
+               i = 0;
+           }
+           continue;
+       }
+       if (++i < MAGICK_LEN)
+           continue;
+       break;
+   }
+
+   return Serial.readBytes(
+       ((byte*)&request) + MAGICK_SIZE,
+       REQUEST_SIZE - MAGICK_SIZE) == REQUEST_SIZE - MAGICK_SIZE;
+}
+
+void controlMotor(int in1, int in2, int value) {
+    if (value > 0) {
+        digitalWrite(in1, LOW);
+        analogWrite(in2, constrain(value, 0, 255));
+    } else if (value < 0) {
+        digitalWrite(in2, LOW);
+        analogWrite(in1, constrain(-1 * value, 0, 255));
+    } else {
+        digitalWrite(in1, LOW);
+        digitalWrite(in2, LOW);
+    }
+}
+
+void controlCamServo(Servo &servo, int &servoMove, int value) {
+    if (value >= CAM_SERVO_POS_BASE) {
+        servo.write(constrain(value - CAM_SERVO_POS_BASE, 5, 175));
+        servoMove = 0;
+    } else {
+        servoMove = value;
+    }
+}
+
+void controlCamServoMoveLoop(Servo &servo, int &servoMove) {
+    if (servoMove != 0)
+        servo.write(constrain(servo.read() + servoMove, 5, 175));
+}
+
+void controlLighting(int value) {
+    if (value > 0) {
+        digitalWrite(LIGHTING_PIN, HIGH);
+    } else {
+        digitalWrite(LIGHTING_PIN, LOW);
+    }
+}
 
 unsigned int getVoltage() {
     unsigned long vcc = 0,
@@ -74,76 +150,19 @@ unsigned int getVoltage() {
            * (1000L / (VOLTAGE_R2 * 1000L / (VOLTAGE_R1 + VOLTAGE_R2)));
 }
 
-bool readControl() {
-   int i = 0;
+void writeResponse() {
+    unsigned long vSum = 0;
 
-   if (Serial.available() <= CONTROL_MAGICK_SIZE)
-       return false;
+    if (Serial.availableForWrite() < RESPONSE_SIZE)
+        return;
 
-   while (true) {
-       if (Serial.readBytes((byte*)&control.magick[i], 1) != 1)
-           return false;
+    response.camServoH = CAM_SERVO_POS_BASE + camServoH.read();
+    response.camServoV = CAM_SERVO_POS_BASE + camServoV.read();
 
-       if (control.magick[i] != CONTROL_MAGICK[i]) {
-           if (control.magick[i] == CONTROL_MAGICK[0]) {
-             control.magick[0] = CONTROL_MAGICK[0];
-             i = 1;
-           } else {
-             i = 0;
-           }
-           continue;
-       }
-       if (++i < CONTROL_MAGICK_LEN)
-           continue;
-       break;
-   }
+    for (int i = 0; i < VOLTAGE_LEN; i++) vSum += voltage[i];
+    response.voltage = vSum / VOLTAGE_LEN;
 
-   return Serial.readBytes(
-       ((byte*)&control) + CONTROL_MAGICK_SIZE,
-       CONTROL_NO_MAGICK_SIZE) == CONTROL_NO_MAGICK_SIZE;
-}
-
-void controlMotor(int in1, int in2) {
-    if (control.value > 0) {
-        digitalWrite(in1, LOW);
-        analogWrite(in2, constrain(control.value, 0, 255));
-    } else if (control.value < 0) {
-        digitalWrite(in2, LOW);
-        analogWrite(in1, constrain(-1 * control.value, 0, 255));
-    } else {
-        digitalWrite(in1, LOW);
-        digitalWrite(in2, LOW);
-    }
-}
-
-void stopMotors() {
-   digitalWrite(MOTOR_DRV_IN1, LOW);
-   digitalWrite(MOTOR_DRV_IN2, LOW);
-   digitalWrite(MOTOR_DRV_IN3, LOW);
-   digitalWrite(MOTOR_DRV_IN4, LOW);
-}
-
-void controlCamServo(Servo &servo) {
-    servo.write(constrain(control.value, 5, 175));
-}
-
-void controlCamServoMove(int &mv) {
-    mv = control.value;
-}
-
-void controlCamServoMoveLoop(Servo &servo, int &mv) {
-    if (mv != 0)
-        servo.write(constrain(servo.read() + mv, 5, 175));
-}
-
-void resetCamServo(Servo &servo, int &mv) {
-    servo.write(90);
-    mv = 0;
-}
-
-void controlVoltage() {
-    control.value = getVoltage();
-    Serial.write((byte*)&control, CONTROL_SIZE);
+    Serial.write((byte*)&response, RESPONSE_SIZE);
 }
 
 void setup() {
@@ -161,41 +180,26 @@ void setup() {
 
 void loop() {
     unsigned long now = millis();
-    if (readControl()) {
-        lastControl = now;
+    if (readRequest()) {
+        requestTime = now;
         digitalWrite(LED_BUILTIN, HIGH);
-        switch (control.device) {
-            case DEVICE_MOTOR_L:
-                controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2);
-                break;
-            case DEVICE_MOTOR_R:
-                controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4);
-                break;
-            case DEVICE_CAM_SERVO_H:
-                controlCamServo(camServoH);
-                break;
-            case DEVICE_CAM_SERVO_V:
-                controlCamServo(camServoV);
-                break;
-            case DEVICE_CAM_SERVO_MOVE_H:
-                controlCamServoMove(camServoMoveH);
-                break;
-            case DEVICE_CAM_SERVO_MOVE_V:
-                controlCamServoMove(camServoMoveV);
-                break;
-            case DEVICE_VOLAGE:
-                controlVoltage();
-                break;
-        }
-    } else if (lastControl > 0) {
-        if (now - lastControl > 500) {
+        controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2, request.motorL);
+        controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, request.motorR);
+        controlCamServo(camServoH, camServoMoveH, request.camServoH);
+        controlCamServo(camServoV, camServoMoveV, request.camServoV);
+        controlLighting(request.lighting);
+
+        writeResponse();
+    } else if (requestTime > 0) {
+        if (now - requestTime > 500) {
             digitalWrite(LED_BUILTIN, LOW);
         }
-        if (now - lastControl > 3000) {
+        if (now - requestTime > 3000) {
             // lost control
-            stopMotors();
-            resetCamServo(camServoH, camServoMoveH);
-            resetCamServo(camServoV, camServoMoveV);
+            controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2, 0);
+            controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, 0);
+            controlCamServo(camServoH, camServoMoveH, CAM_SERVO_POS_BASE + 90);
+            controlCamServo(camServoV, camServoMoveV, CAM_SERVO_POS_BASE + 90);
         }
     }
 
@@ -203,6 +207,17 @@ void loop() {
         controlCamServoMoveLoop(camServoH, camServoMoveH);
         controlCamServoMoveLoop(camServoV, camServoMoveV);
         servoTime = now;
+    }
+
+    if (now < VOLTAGE_LEN * 100 || now - voltageTime > 60000) {
+        if (voltagePos >= VOLTAGE_LEN) {
+            voltagePos = 0;
+            voltageTime = now;
+            voltagePosTime = now;
+        } else if (now - voltagePosTime > 50) {
+            voltage[voltagePos++] = getVoltage();
+            voltagePosTime = now;
+        }
     }
 }
 
