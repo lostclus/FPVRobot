@@ -41,10 +41,12 @@ function onKeyEvent(eventName, event) {
 	wsRequest["motor_r"] = isDown ? -motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "KeyA") {
-	wsRequest["motor_r"] = isDown ? -motorSpeed : 0;
+	wsRequest["motor_l"] = isDown ? -motorSpeed : 0;
+	wsRequest["motor_r"] = isDown ? motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "KeyD") {
-	wsRequest["motor_l"] = isDown ? -motorSpeed : 0;
+	wsRequest["motor_l"] = isDown ? motorSpeed : 0;
+	wsRequest["motor_r"] = isDown ? -motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "ArrowLeft") {
 	wsRequest["cam_servo_h"] = isDown ? 1 : 0;
@@ -74,7 +76,7 @@ function onWSResponse(event) {
 }
 
 
-setInterval(sendWSRequest, 2000);
+setInterval(sendWSRequest, 1000);
 
 document.addEventListener("keydown", (event) => {
     onKeyEvent("keydown", event);
