@@ -6,12 +6,12 @@ from aiohttp import web
 
 from .handlers import routes
 from .camera import create_camera, stop_camera
-from .motor_servo import create_serial, process_messages
+from .motor_servo import create_serial, process_responses
 
 
 async def on_startup(app):
     ser = app['motor_servo_serial']
-    task = asyncio.create_task(process_messages(ser, app))
+    task = asyncio.create_task(process_responses(ser, app))
     app['tasks'].add(task)
 
 

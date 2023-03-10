@@ -11,82 +11,91 @@ from .config import (
     MOTOR_SERVO_TIMEOUT,
 )
 
-DEVICE_PING = 0
-DEVICE_MOTOR_L = 1
-DEVICE_MOTOR_R = 2
-DEVICE_CAM_SERVO_H = 3
-DEVICE_CAM_SERVO_V = 4
-DEVICE_CAM_SERVO_MOVE_H = 5
-DEVICE_CAM_SERVO_MOVE_V = 6
-DEVICE_VOLAGE = 7
+MAGICK = b'FpvB'
+RequestTuple = namedtuple(
+    'RequestTuple', [
+        'magick',
+        'motor_l',
+        'motor_r',
+        'cam_servo_h',
+        'cam_servo_v',
+        'lighting',
+    ],
+)
+request_struct = struct.Struct('<4s5h')
 
-MESSAGE_MAGICK = b'FpvB'
-MessageTuple = namedtuple('MessageTuple', ['magick', 'device', 'value'])
-message_struct = struct.Struct('<4shh')
+ResponseTuple = namedtuple(
+    'ResponseTuple', [
+        'magick',
+        'cam_servo_h',
+        'cam_servo_v',
+        'voltage',
+    ],
+)
+response_struct = struct.Struct('<4s3h')
+
+CAM_SERVO_POS_BASE = 1000
 
 write_lock = asyncio.Lock()
 
 
-def load_message(buffer):
-    msg = MessageTuple._make(message_struct.unpack(buffer))
-    assert msg.magick == MESSAGE_MAGICK
-    return msg
+def load_response(buffer):
+    response = ResponseTuple._make(response_struct.unpack(buffer))
+    assert response.magick == MAGICK
+    return response
 
 
-def dump_message(msg):
-    assert msg.magick == MESSAGE_MAGICK
-    return message_struct.pack(*msg)
+def dump_request(request):
+    assert request.magick == MAGICK
+    return request_struct.pack(*request)
 
 
-def new_message(device, value):
-    msg = MessageTuple(magick=MESSAGE_MAGICK, device=device, value=value)
-    return msg
+def response_as_dict(response):
+    d = response._asdict()
+    d.pop('magick')
+    return d
 
 
-def message_size():
-    return struct.calcsize(message_struct.format)
+def new_requset(**kwargs):
+    kwargs.setdefault('motor_l', 0)
+    kwargs.setdefault('motor_r', 0)
+    kwargs.setdefault('cam_servo_h', 0)
+    kwargs.setdefault('cam_servo_v', 0)
+    kwargs.setdefault('lighting', 0)
+    request = RequestTuple(magick=MAGICK, **kwargs)
+    return request
 
 
-async def read_message(ser):
+def request_size():
+    return struct.calcsize(request_struct.format)
+
+
+def response_size():
+    return struct.calcsize(response_struct.format)
+
+
+async def read_response(ser):
     buf = None
-    while buf != MESSAGE_MAGICK:
-        buf = await ser.read_async(len(MESSAGE_MAGICK))
-    buf += await ser.read_async(message_size() - len(MESSAGE_MAGICK))
-    msg = load_message(buf)
-    return msg
+    while buf != MAGICK:
+        buf = await ser.read_async(len(MAGICK))
+    buf += await ser.read_async(response_size() - len(MAGICK))
+    response = load_response(buf)
+    return response
 
 
-async def write_message(ser, msg):
+async def write_request(ser, request):
     async with write_lock:
-        count = await ser.write_async(dump_message(msg))
+        count = await ser.write_async(dump_request(request))
+    #print(request, count)
     return count
 
 
-async def write_value(ser, device, value):
-    msg = new_message(device, value)
-    return await write_message(ser, msg)
-
-
-async def write_ping(ser):
-    await write_value(ser, DEVICE_PING, 0)
-
-
-async def messages_generator(ser):
+async def process_responses(ser, app):
     while True:
-        msg = await read_message(ser)
-        yield msg
-
-
-async def process_messages(ser, app):
-    async for msg in messages_generator(ser):
-        if msg.device == DEVICE_VOLAGE:
-            for ws in set(app['websockets']):
-                data = {
-                    'type': 'device',
-                    'device': msg.device,
-                    'value': msg.value,
-                }
-                await ws.send_json(data)
+        response = await read_response(ser)
+        for ws in set(app['websockets']):
+            data = response_as_dict(response)
+            await ws.send_json(data)
 
 
 @contextmanager
