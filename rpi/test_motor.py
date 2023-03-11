@@ -114,6 +114,13 @@ def test_servos_move(ser):
                 time.sleep(0.5)
 
 
+def test_lighting(ser):
+    for value in range(8):
+        request = new_requset(lighting=value)
+        write_request(ser, request)
+        time.sleep(1)
+
+
 def test_voltage(ser):
     time.sleep(0.5)
     while read_response(ser) is not None:
@@ -135,6 +142,7 @@ def main(argv):
         test_motors(ser)
         #test_servos(ser)
         test_servos_move(ser)
+        test_lighting(ser)
         test_voltage(ser)
 
 

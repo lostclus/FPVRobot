@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <Adafruit_NeoPixel.h>
 
 #define MOTOR_DRV_IN1 6
 #define MOTOR_DRV_IN2 11
@@ -12,7 +13,8 @@
 #define VOLTAGE_R1 20000L
 #define VOLTAGE_R2 10000L
 
-#define LIGHTING_PIN 2
+#define LIGHTING_PIN 4
+#define LIGHTING_NUM_PIXELS 8
 
 #define MAGICK_STRING "FpvB"
 const char MAGICK[4] = MAGICK_STRING;
@@ -45,6 +47,24 @@ int camServoMoveH = 0,
     camServoMoveV = 0;
 unsigned long servoTime = 0;
 #define CAM_SERVO_POS_BASE 1000
+
+Adafruit_NeoPixel lighting(
+    LIGHTING_NUM_PIXELS,
+    LIGHTING_PIN,
+    NEO_GRB + NEO_KHZ800
+);
+#define LIGHTING_NUM_STATIC_MODES 8
+const byte lightingStaticModes[LIGHTING_NUM_STATIC_MODES][3] = {
+    {0x00, 0x00, 0x00}, // 0 - black
+    {0x00, 0x00, 0xff}, // 1 - blue
+    {0x00, 0xff, 0x00}, // 2 - green
+    {0x00, 0xff, 0xff}, // 3 - cyan
+    {0xff, 0x00, 0x00}, // 4 - red
+    {0xff, 0x00, 0xff}, // 5 - magenta
+    {0xff, 0xff, 0x00}, // 6 - yellow
+    {0xff, 0xff, 0xff}, // 7 - white
+};
+int lightingMode = 0;
 
 unsigned int voltage[5] = {0, 0, 0, 0, 0};
 #define VOLTAGE_LEN (sizeof(voltage) / sizeof(voltage[0]))
@@ -110,11 +130,22 @@ void controlCamServoMoveLoop(Servo &servo, int &servoMove) {
 }
 
 void controlLighting(int value) {
-    if (value > 0) {
-        digitalWrite(LIGHTING_PIN, HIGH);
-    } else {
-        digitalWrite(LIGHTING_PIN, LOW);
+    if (value >= 0 && value < LIGHTING_NUM_STATIC_MODES) {
+        if (value != lightingMode) {
+            lighting.clear();
+            for (int i = 0; i < LIGHTING_NUM_PIXELS; i++)
+                lighting.setPixelColor(
+                    i,
+                    lighting.Color(
+                        lightingStaticModes[value][0],
+                        lightingStaticModes[value][1],
+                        lightingStaticModes[value][2]
+                    )
+                );
+            lighting.show();
+        }
     }
+    lightingMode = value;
 }
 
 unsigned int getVoltage() {
@@ -174,6 +205,9 @@ void setup() {
     pinMode(MOTOR_DRV_IN4, OUTPUT);
     camServoH.attach(CAM_SERVO_H);
     camServoV.attach(CAM_SERVO_V);
+    lighting.begin();
+    lighting.clear();
+    lighting.show();
     analogReference(DEFAULT);
     analogWrite(VOLTAGE_PIN, 0);
 }
@@ -200,6 +234,8 @@ void loop() {
             controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, 0);
             controlCamServo(camServoH, camServoMoveH, CAM_SERVO_POS_BASE + 90);
             controlCamServo(camServoV, camServoMoveV, CAM_SERVO_POS_BASE + 90);
+            delay(100);
+            controlLighting(0);
         }
     }
 
