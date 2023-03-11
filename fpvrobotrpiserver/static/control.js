@@ -56,6 +56,9 @@ function onKeyEvent(eventName, event) {
 	wsRequest["cam_servo_v"] = isDown ? 1 : 0;
     } else if (event.code == "ArrowUp") {
 	wsRequest["cam_servo_v"] = isDown ? -1 : 0;
+    } else if (event.code == "KeyL") {
+        if (isUp)
+	    wsRequest["lighting"] = (wsRequest["lighting"] + 1) % 8;
     } else if (event.code == "Home") {
 	wsRequest["cam_servo_h"] = 1090;
 	wsRequest["cam_servo_v"] = 1090;
