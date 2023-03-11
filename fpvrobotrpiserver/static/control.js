@@ -1,6 +1,7 @@
 const MOTOR_SPEED_MIN = 70;
 const MOTOR_SPEED_MAX = 255;
 const MOTOR_SPEED_INC = 5;
+const LIGHTING_NUM_MODES = 8;
 
 const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
 const socket = new WebSocket(wsAddr);
@@ -29,7 +30,6 @@ function motorSpeedMin() {
 }
 
 function onKeyEvent(eventName, event) {
-    var isUp = eventName == "keyup";
     var isDown = eventName == "keydown";
 
     if (event.code == "KeyW") {
@@ -57,8 +57,8 @@ function onKeyEvent(eventName, event) {
     } else if (event.code == "ArrowUp") {
 	wsRequest["cam_servo_v"] = isDown ? -1 : 0;
     } else if (event.code == "KeyL") {
-        if (isUp)
-	    wsRequest["lighting"] = (wsRequest["lighting"] + 1) % 8;
+        if (!isDown)
+	    wsRequest["lighting"] = (wsRequest["lighting"] + 1) % LIGHTING_NUM_MODES;
     } else if (event.code == "Home") {
 	wsRequest["cam_servo_h"] = 1090;
 	wsRequest["cam_servo_v"] = 1090;
@@ -68,11 +68,25 @@ function onKeyEvent(eventName, event) {
 	wsRequest["cam_servo_h"] = 0;
 	wsRequest["cam_servo_v"] = 0;
     }
-    $("button[data-code=" + event.code + "]").toggleClass("down", isDown);
     sendWSRequest();
+    $("button[data-code=" + event.code + "]").toggleClass("down", isDown);
 }
 
-function onTouchStart(e) {
+function onButtonMouseDown() {
+    var event = {
+	code: $(this).attr("data-code"),
+    };
+    onKeyEvent("keydown", event);
+}
+
+function onButtonMouseUp() {
+    var event = {
+	code: $(this).attr("data-code"),
+    };
+    onKeyEvent("keyup", event);
+}
+
+function onButtonTouchStart(e) {
     var event = {
 	code: $(this).attr("data-code"),
     };
@@ -80,7 +94,7 @@ function onTouchStart(e) {
     e.preventDefault();
 }
 
-function onTouchEnd(e) {
+function onButtonTouchEnd(e) {
     var event = {
 	code: $(this).attr("data-code"),
     };
@@ -107,8 +121,10 @@ document.addEventListener("keyup", (event) => {
 
 $(document).ready(function($) {
     $("#button-box button")
-	.on("touchstart", onTouchStart)
-	.on("touchend", onTouchEnd);
+	.on("mousedown", onButtonMouseDown)
+	.on("mouseup", onButtonMouseUp)
+	.on("touchstart", onButtonTouchStart)
+	.on("touchend", onButtonTouchEnd);
 });
 
 socket.addEventListener('message', onWSResponse);

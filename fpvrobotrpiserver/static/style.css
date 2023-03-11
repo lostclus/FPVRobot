@@ -4,6 +4,11 @@ body {
     margin: 0;
     padding: 0;
 }
+#voltage-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
 #video-box, #voltage-box {
     text-align: center;
 }
