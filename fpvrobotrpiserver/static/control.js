@@ -71,6 +71,20 @@ function onKeyEvent(eventName, event) {
     sendWSRequest();
 }
 
+function onTouchStart() {
+    var event = {
+	code: $(this).attr("data-code"),
+    };
+    onKeyEvent("keydown", event);
+}
+
+function onTouchEnd() {
+    var event = {
+	code: $(this).attr("data-code"),
+    };
+    onKeyEvent("keyup", event);
+}
+
 function onWSResponse(event) {
     var response = JSON.parse(event.data);
     $("#voltage").text(
@@ -86,6 +100,12 @@ document.addEventListener("keydown", (event) => {
 });
 document.addEventListener("keyup", (event) => {
     onKeyEvent("keyup", event);
+});
+
+$(document).ready(function($) {
+    $("#button-box button")
+	.on("touchstart", onTouchStart)
+	.on("touchend", onTouchEnd);
 });
 
 socket.addEventListener('message', onWSResponse);

@@ -1,15 +1,53 @@
 <html>
     <head>
 	<title>FPV Robot</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="static/style.css"/>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
         <script src="static/control.js"></script>
     </head>
     <body>
-        <div>
-            <img src="stream.mjpg" />
-        </div>
-	<div>
+	<div id="voltage-box">
 	    Battary: <span id="voltage">0</span>V
+	</div>
+        <div id="video-box">
+            <img id="video" src="stream.mjpg" />
+        </div>
+	<div id="button-box">
+	    <table id="robot-move">
+		<tr>
+		    <td></td>
+		    <td><button data-code="KeyW">W</button></td>
+		    <td></td>
+		</tr>
+		<tr>
+		    <td><button data-code="KeyA">A</button></td>
+		    <td><button data-code="Space">&nbsp;</button></td>
+		    <td><button data-code="KeyD">D</button></td>
+		</tr>
+		<tr>
+		    <td></td>
+		    <td><button data-code="KeyS">S</button></td>
+		    <td></td>
+		</tr>
+	    </table>
+	    <table id="camera-move">
+		<tr>
+		    <td></td>
+		    <td><button data-code="ArrowUp">↑</button></td>
+		    <td></td>
+		</tr>
+		<tr>
+		    <td><button data-code="ArrowLeft">←</button></td>
+		    <td><button data-code="Home">&nbsp;</button></td>
+		    <td><button data-code="ArrowRight">→</button></td>
+		</tr>
+		<tr>
+		    <td></td>
+		    <td><button data-code="ArrowDown">↓</button></td>
+		    <td></td>
+		</tr>
+	    </table>
 	</div>
     </body>
 </html>
