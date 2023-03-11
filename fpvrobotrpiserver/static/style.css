@@ -12,20 +12,31 @@ body {
 }
 #button-box {
     position: relative;
-    top: -6em;
+    top: -4em;
     text-align: center;
     font-size: 200%;
 }
-#robot-move {
-    float: left;
+#button-table {
+    margin: 0;
+    padding: 0;
+    width: 100%;
 }
-#camera-move {
-    float: right;
+#button-table td {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+#robot-move, #camera-move {
+    width: 6em;
 }
 #button-box button {
     margin: 0;
     width: 2em;
     height: 2em;
-    opacity: 0.5;
+    opacity: 0.3;
     font-size: inherit;
+    background-color: white;
+}
+#button-box button.down {
+	background-color: #00ff00;
 }

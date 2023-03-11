@@ -68,21 +68,24 @@ function onKeyEvent(eventName, event) {
 	wsRequest["cam_servo_h"] = 0;
 	wsRequest["cam_servo_v"] = 0;
     }
+    $("button[data-code=" + event.code + "]").toggleClass("down", isDown);
     sendWSRequest();
 }
 
-function onTouchStart() {
+function onTouchStart(e) {
     var event = {
 	code: $(this).attr("data-code"),
     };
     onKeyEvent("keydown", event);
+    e.preventDefault();
 }
 
-function onTouchEnd() {
+function onTouchEnd(e) {
     var event = {
 	code: $(this).attr("data-code"),
     };
     onKeyEvent("keyup", event);
+    e.preventDefault();
 }
 
 function onWSResponse(event) {

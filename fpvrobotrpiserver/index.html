@@ -14,38 +14,49 @@
             <img id="video" src="stream.mjpg" />
         </div>
 	<div id="button-box">
-	    <table id="robot-move">
+	    <table id="button-table">
 		<tr>
-		    <td></td>
-		    <td><button data-code="KeyW">W</button></td>
-		    <td></td>
-		</tr>
-		<tr>
-		    <td><button data-code="KeyA">A</button></td>
-		    <td><button data-code="Space">&nbsp;</button></td>
-		    <td><button data-code="KeyD">D</button></td>
-		</tr>
-		<tr>
-		    <td></td>
-		    <td><button data-code="KeyS">S</button></td>
-		    <td></td>
-		</tr>
-	    </table>
-	    <table id="camera-move">
-		<tr>
-		    <td></td>
-		    <td><button data-code="ArrowUp">↑</button></td>
-		    <td></td>
-		</tr>
-		<tr>
-		    <td><button data-code="ArrowLeft">←</button></td>
-		    <td><button data-code="Home">&nbsp;</button></td>
-		    <td><button data-code="ArrowRight">→</button></td>
-		</tr>
-		<tr>
-		    <td></td>
-		    <td><button data-code="ArrowDown">↓</button></td>
-		    <td></td>
+		    <td id="robot-move">
+			<table>
+			    <tr>
+				<td></td>
+				<td><button data-code="KeyW">W</button></td>
+				<td></td>
+			    </tr>
+			    <tr>
+				<td><button data-code="KeyA">A</button></td>
+				<td><button data-code="Space">✕</button></td>
+				<td><button data-code="KeyD">D</button></td>
+			    </tr>
+			    <tr>
+				<td></td>
+				<td><button data-code="KeyS">S</button></td>
+				<td></td>
+			    </tr>
+			</table>
+		    </td>
+		    <td id="extra">
+			<button data-code="KeyL">L</button>
+		    </td>
+		    <td id="camera-move">
+			<table>
+			    <tr>
+				<td></td>
+				<td><button data-code="ArrowUp">↑</button></td>
+				<td></td>
+			    </tr>
+			    <tr>
+				<td><button data-code="ArrowLeft">←</button></td>
+				<td><button data-code="Home">✕</button></td>
+				<td><button data-code="ArrowRight">→</button></td>
+			    </tr>
+			    <tr>
+				<td></td>
+				<td><button data-code="ArrowDown">↓</button></td>
+				<td></td>
+			    </tr>
+			</table>
+		    </td>
 		</tr>
 	    </table>
 	</div>
