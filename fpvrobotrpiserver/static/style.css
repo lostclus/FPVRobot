@@ -3,23 +3,29 @@ body {
     color: white;
     margin: 0;
     padding: 0;
+    font-size: 20px;
 }
 #voltage-box {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: relative;
+    width: 640px;
+    height: 20px;
+    margin: 0 auto -20px auto;
+    z-index: 1;
 }
-#video-box, #voltage-box {
+#video-box {
+    width: 640px;
+    margin: 0 auto;
     text-align: center;
 }
 #video-box img {
     margin: 0;
 }
 #button-box {
+    width: 640px;
+    margin: 0 auto;
     position: relative;
-    top: -4em;
+    top: -110px;
     text-align: center;
-    font-size: 200%;
 }
 #button-table {
     margin: 0;
@@ -32,16 +38,17 @@ body {
     text-align: center;
 }
 #robot-move, #camera-move {
-    width: 6em;
+    width: 120px;
 }
 #button-box button {
     margin: 0;
-    width: 2em;
-    height: 2em;
-    opacity: 0.3;
+    width: 40px;
+    height: 40px;
+    opacity: 0.25;
     font-size: inherit;
+    color: black;
     background-color: white;
 }
 #button-box button.down {
-	background-color: #00ff00;
+    background-color: #00ff00;
 }
