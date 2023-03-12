@@ -108,7 +108,7 @@ def test_servos(ser):
 def test_servos_move(ser):
     for device in ('cam_servo_h', 'cam_servo_v'):
         for value in (1, -1, 0):
-            for i in range(value == 0 and 1 or 10):
+            for i in range(value == 0 and 1 or 15):
                 request = new_requset(**{device: value})
                 write_request(ser, request)
                 time.sleep(0.5)

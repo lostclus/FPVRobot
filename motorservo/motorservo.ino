@@ -10,7 +10,7 @@
 #define CAM_SERVO_V 10
 
 #define VOLTAGE_PIN 0
-#define VOLTAGE_R1 20000L
+#define VOLTAGE_R1 30000L
 #define VOLTAGE_R2 10000L
 
 #define LIGHTING_PIN 4
@@ -45,7 +45,10 @@ Servo camServoH;
 Servo camServoV;
 int camServoMoveH = 0,
     camServoMoveV = 0;
-unsigned long servoTime = 0;
+unsigned long camServoHMoveTime = 0,
+              camServoVMoveTime = 0,
+              camServoHStartMoveTime = 0,
+              camServoVStartMoveTime = 0;
 #define CAM_SERVO_POS_BASE 1000
 
 Adafruit_NeoPixel lighting(
@@ -115,18 +118,39 @@ void controlMotor(int in1, int in2, int value) {
     }
 }
 
-void controlCamServo(Servo &servo, int &servoMove, int value) {
+void controlCamServo(Servo &servo,
+                     int &servoMove,
+                     unsigned long &servoMoveStartTime,
+                     int value) {
+    unsigned long now = millis();
+
     if (value >= CAM_SERVO_POS_BASE) {
         servo.write(constrain(value - CAM_SERVO_POS_BASE, 5, 175));
         servoMove = 0;
     } else {
+        if (value != 0 && value != servoMove)
+            servoMoveStartTime = now;
         servoMove = value;
     }
 }
 
-void controlCamServoMoveLoop(Servo &servo, int &servoMove) {
-    if (servoMove != 0)
-        servo.write(constrain(servo.read() + servoMove, 5, 175));
+void controlCamServoMoveLoop(Servo &servo,
+                             int &servoMove,
+                             unsigned long &servoMoveTime,
+                             unsigned long &servoMoveStartTime) {
+    unsigned long now = millis();
+    int pause;
+
+    if (servoMove == 0)
+        return;
+
+    pause = (now - servoMoveStartTime <= 300) ? 60 : 30;
+
+    if (now - servoMoveTime < pause)
+        return;
+
+    servo.write(constrain(servo.read() + servoMove, 5, 175));
+    servoMoveTime = now;
 }
 
 void controlLighting(int value) {
@@ -219,8 +243,14 @@ void loop() {
         digitalWrite(LED_BUILTIN, HIGH);
         controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2, request.motorL);
         controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, request.motorR);
-        controlCamServo(camServoH, camServoMoveH, request.camServoH);
-        controlCamServo(camServoV, camServoMoveV, request.camServoV);
+        controlCamServo(camServoH,
+                        camServoMoveH,
+                        camServoHStartMoveTime,
+                        request.camServoH);
+        controlCamServo(camServoV,
+                        camServoMoveV,
+                        camServoVStartMoveTime,
+                        request.camServoV);
         controlLighting(request.lighting);
 
         writeResponse();
@@ -232,18 +262,27 @@ void loop() {
             // lost control
             controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2, 0);
             controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, 0);
-            controlCamServo(camServoH, camServoMoveH, CAM_SERVO_POS_BASE + 90);
-            controlCamServo(camServoV, camServoMoveV, CAM_SERVO_POS_BASE + 90);
+            controlCamServo(camServoH,
+                            camServoMoveH,
+                            camServoHStartMoveTime,
+                            CAM_SERVO_POS_BASE + 90);
+            controlCamServo(camServoV,
+                            camServoMoveV,
+                            camServoVStartMoveTime,
+                            CAM_SERVO_POS_BASE + 90);
             delay(100);
             controlLighting(0);
         }
     }
 
-    if (now - servoTime > 30) {
-        controlCamServoMoveLoop(camServoH, camServoMoveH);
-        controlCamServoMoveLoop(camServoV, camServoMoveV);
-        servoTime = now;
-    }
+    controlCamServoMoveLoop(camServoH,
+                            camServoMoveH,
+                            camServoHMoveTime,
+                            camServoHStartMoveTime);
+    controlCamServoMoveLoop(camServoV,
+                            camServoMoveV,
+                            camServoVMoveTime,
+                            camServoVStartMoveTime);
 
     if (now < VOLTAGE_LEN * 100 || now - voltageTime > 60000) {
         if (voltagePos >= VOLTAGE_LEN) {
