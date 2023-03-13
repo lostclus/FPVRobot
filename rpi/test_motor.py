@@ -115,7 +115,7 @@ def test_servos_move(ser):
 
 
 def test_lighting(ser):
-    for value in range(8):
+    for value in (1, 0, 1, 0, 1, 0):
         request = new_requset(lighting=value)
         write_request(ser, request)
         time.sleep(1)
