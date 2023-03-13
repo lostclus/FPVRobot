@@ -1,7 +1,6 @@
 const MOTOR_SPEED_MIN = 70;
 const MOTOR_SPEED_MAX = 255;
 const MOTOR_SPEED_INC = 5;
-const LIGHTING_NUM_MODES = 8;
 
 const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
 const socket = new WebSocket(wsAddr);
@@ -58,7 +57,7 @@ function onKeyEvent(eventName, event) {
 	wsRequest["cam_servo_v"] = isDown ? -1 : 0;
     } else if (event.code == "KeyL") {
         if (!isDown)
-	    wsRequest["lighting"] = (wsRequest["lighting"] + 1) % LIGHTING_NUM_MODES;
+	    wsRequest["lighting"] = (wsRequest["lighting"] + 1) % 2;
     } else if (event.code == "Home") {
 	wsRequest["cam_servo_h"] = 1090;
 	wsRequest["cam_servo_v"] = 1090;
