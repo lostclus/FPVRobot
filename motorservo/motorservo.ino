@@ -1,5 +1,4 @@
 #include <Servo.h>
-#include <Adafruit_NeoPixel.h>
 
 #define MOTOR_DRV_IN1 6
 #define MOTOR_DRV_IN2 11
@@ -10,11 +9,10 @@
 #define CAM_SERVO_V 10
 
 #define VOLTAGE_PIN 0
-#define VOLTAGE_R1 20000L
+#define VOLTAGE_R1 30000L
 #define VOLTAGE_R2 10000L
 
 #define LIGHTING_PIN 4
-#define LIGHTING_NUM_PIXELS 8
 
 #define MAGICK_STRING "FpvB"
 const char MAGICK[4] = MAGICK_STRING;
@@ -45,26 +43,11 @@ Servo camServoH;
 Servo camServoV;
 int camServoMoveH = 0,
     camServoMoveV = 0;
-unsigned long servoTime = 0;
+unsigned long camServoHMoveTime = 0,
+              camServoVMoveTime = 0,
+              camServoHStartMoveTime = 0,
+              camServoVStartMoveTime = 0;
 #define CAM_SERVO_POS_BASE 1000
-
-Adafruit_NeoPixel lighting(
-    LIGHTING_NUM_PIXELS,
-    LIGHTING_PIN,
-    NEO_GRB + NEO_KHZ800
-);
-#define LIGHTING_NUM_STATIC_MODES 8
-const byte lightingStaticModes[LIGHTING_NUM_STATIC_MODES][3] = {
-    {0x00, 0x00, 0x00}, // 0 - black
-    {0x00, 0x00, 0xff}, // 1 - blue
-    {0x00, 0xff, 0x00}, // 2 - green
-    {0x00, 0xff, 0xff}, // 3 - cyan
-    {0xff, 0x00, 0x00}, // 4 - red
-    {0xff, 0x00, 0xff}, // 5 - magenta
-    {0xff, 0xff, 0x00}, // 6 - yellow
-    {0xff, 0xff, 0xff}, // 7 - white
-};
-int lightingMode = 0;
 
 unsigned int voltage[5] = {0, 0, 0, 0, 0};
 #define VOLTAGE_LEN (sizeof(voltage) / sizeof(voltage[0]))
@@ -115,37 +98,47 @@ void controlMotor(int in1, int in2, int value) {
     }
 }
 
-void controlCamServo(Servo &servo, int &servoMove, int value) {
+void controlCamServo(Servo &servo,
+                     int &servoMove,
+                     unsigned long &servoMoveStartTime,
+                     int value) {
+    unsigned long now = millis();
+
     if (value >= CAM_SERVO_POS_BASE) {
         servo.write(constrain(value - CAM_SERVO_POS_BASE, 5, 175));
         servoMove = 0;
     } else {
+        if (value != 0 && value != servoMove)
+            servoMoveStartTime = now;
         servoMove = value;
     }
 }
 
-void controlCamServoMoveLoop(Servo &servo, int &servoMove) {
-    if (servoMove != 0)
-        servo.write(constrain(servo.read() + servoMove, 5, 175));
+void controlCamServoMoveLoop(Servo &servo,
+                             int &servoMove,
+                             unsigned long &servoMoveTime,
+                             unsigned long &servoMoveStartTime) {
+    unsigned long now = millis();
+    int pause;
+
+    if (servoMove == 0)
+        return;
+
+    pause = (now - servoMoveStartTime <= 300) ? 60 : 30;
+
+    if (now - servoMoveTime < pause)
+        return;
+
+    servo.write(constrain(servo.read() + servoMove, 5, 175));
+    servoMoveTime = now;
 }
 
 void controlLighting(int value) {
-    if (value >= 0 && value < LIGHTING_NUM_STATIC_MODES) {
-        if (value != lightingMode) {
-            lighting.clear();
-            for (int i = 0; i < LIGHTING_NUM_PIXELS; i++)
-                lighting.setPixelColor(
-                    i,
-                    lighting.Color(
-                        lightingStaticModes[value][0],
-                        lightingStaticModes[value][1],
-                        lightingStaticModes[value][2]
-                    )
-                );
-            lighting.show();
-        }
+    if (value != 0) {
+        digitalWrite(LIGHTING_PIN, HIGH);
+    } else {
+        digitalWrite(LIGHTING_PIN, LOW);
     }
-    lightingMode = value;
 }
 
 unsigned int getVoltage() {
@@ -205,9 +198,7 @@ void setup() {
     pinMode(MOTOR_DRV_IN4, OUTPUT);
     camServoH.attach(CAM_SERVO_H);
     camServoV.attach(CAM_SERVO_V);
-    lighting.begin();
-    lighting.clear();
-    lighting.show();
+    pinMode(LIGHTING_PIN, OUTPUT);
     analogReference(DEFAULT);
     analogWrite(VOLTAGE_PIN, 0);
 }
@@ -219,8 +210,14 @@ void loop() {
         digitalWrite(LED_BUILTIN, HIGH);
         controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2, request.motorL);
         controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, request.motorR);
-        controlCamServo(camServoH, camServoMoveH, request.camServoH);
-        controlCamServo(camServoV, camServoMoveV, request.camServoV);
+        controlCamServo(camServoH,
+                        camServoMoveH,
+                        camServoHStartMoveTime,
+                        request.camServoH);
+        controlCamServo(camServoV,
+                        camServoMoveV,
+                        camServoVStartMoveTime,
+                        request.camServoV);
         controlLighting(request.lighting);
 
         writeResponse();
@@ -232,18 +229,26 @@ void loop() {
             // lost control
             controlMotor(MOTOR_DRV_IN1, MOTOR_DRV_IN2, 0);
             controlMotor(MOTOR_DRV_IN3, MOTOR_DRV_IN4, 0);
-            controlCamServo(camServoH, camServoMoveH, CAM_SERVO_POS_BASE + 90);
-            controlCamServo(camServoV, camServoMoveV, CAM_SERVO_POS_BASE + 90);
-            delay(100);
+            controlCamServo(camServoH,
+                            camServoMoveH,
+                            camServoHStartMoveTime,
+                            CAM_SERVO_POS_BASE + 90);
+            controlCamServo(camServoV,
+                            camServoMoveV,
+                            camServoVStartMoveTime,
+                            CAM_SERVO_POS_BASE + 90);
             controlLighting(0);
         }
     }
 
-    if (now - servoTime > 30) {
-        controlCamServoMoveLoop(camServoH, camServoMoveH);
-        controlCamServoMoveLoop(camServoV, camServoMoveV);
-        servoTime = now;
-    }
+    controlCamServoMoveLoop(camServoH,
+                            camServoMoveH,
+                            camServoHMoveTime,
+                            camServoHStartMoveTime);
+    controlCamServoMoveLoop(camServoV,
+                            camServoMoveV,
+                            camServoVMoveTime,
+                            camServoVStartMoveTime);
 
     if (now < VOLTAGE_LEN * 100 || now - voltageTime > 60000) {
         if (voltagePos >= VOLTAGE_LEN) {
