@@ -2,6 +2,8 @@ const MOTOR_SPEED_MIN = 70;
 const MOTOR_SPEED_MAX = 255;
 const MOTOR_SPEED_INC = 5;
 
+const LOW_VOLTAGE = 9.0;
+
 const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
 const socket = new WebSocket(wsAddr);
 
@@ -102,10 +104,14 @@ function onButtonTouchEnd(e) {
 }
 
 function onWSResponse(event) {
-    var response = JSON.parse(event.data);
-    $("#voltage").text(
-	response["voltage"] / 1000
-    );
+    var response = JSON.parse(event.data),
+        voltage = Math.ceil(response["voltage"] / 100) / 10;
+    $("#voltage").text(voltage);
+    if (voltage <= LOW_VOLTAGE) {
+	$("#voltage-symbol").html("&#x1faab;");
+    } else {
+	$("#voltage-symbol").html("&#x1f50b;");
+    }
 }
 
 
