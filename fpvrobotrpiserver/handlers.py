@@ -4,7 +4,7 @@ from pathlib import Path
 
 from aiohttp import MultipartWriter, WSMsgType, web
 
-from .motor_servo import new_requset, write_request
+from . import ard0, camera
 
 ROOT_PATH = Path(__file__).parent
 
@@ -51,15 +51,6 @@ async def stream_mjpg(request):
         request.app['tasks'].discard(resp.task)
 
 
-@routes.post('/motor-servo')
-async def motor_servo(request):
-    ser = request.app['motor_servo_serial']
-    data = await request.json()
-    msg = new_message(device=data['device'], value=data['value'])
-    await write_message(ser, msg)
-    return web.json_response({"ok": True})
-
-
 @routes.get('/ws')
 async def ws(request):
     ws = web.WebSocketResponse()
@@ -71,9 +62,15 @@ async def ws(request):
             if msg.type == WSMsgType.PING:
                 await ws.pong()
             elif msg.type == WSMsgType.TEXT:
-                data = json.loads(msg.data)
-                ser = request.app['motor_servo_serial']
-                await write_request(ser, new_requset(**data))
+                req_data = json.loads(msg.data)
+                req_type = req_data.pop('type')
+                if req_type == 'ard0':
+                    ser = request.app['ard0_serial']
+                    req = ard0.new_requset(**req_data)
+                    await ard0.write_request(ser, req)
+                if req_type == 'cam':
+                    cam = request.app['camera']
+                    camera.process_request(request.app, req_data)
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())

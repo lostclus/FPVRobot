@@ -9,17 +9,28 @@ const socket = new WebSocket(wsAddr);
 
 var motorSpeed = MOTOR_SPEED_MIN;
 
-var wsRequest = {
+var ard0Request = {
+    "type": "ard0",
     "motor_l": 0,
     "motor_r": 0,
     "cam_servo_h": 0,
     "cam_servo_v": 0,
     "lighting": 0,
 };
+var camRequest = {
+    "type": "cam",
+    "res_x": 640,
+    "res_y": 480,
+    "quality": 2,
+};
 
 
-function sendWSRequest() {
-    socket.send(JSON.stringify(wsRequest));
+function sendArd0Request() {
+    socket.send(JSON.stringify(ard0Request));
+}
+
+function sendCamRequest() {
+    socket.send(JSON.stringify(camRequest));
 }
 
 function motorSpeedUp() {
@@ -34,42 +45,42 @@ function onKeyEvent(eventName, event) {
     var isDown = eventName == "keydown";
 
     if (event.code == "KeyW") {
-	wsRequest["motor_l"] = isDown ? motorSpeed : 0;
-	wsRequest["motor_r"] = isDown ? motorSpeed : 0;
+	ard0Request["motor_l"] = isDown ? motorSpeed : 0;
+	ard0Request["motor_r"] = isDown ? motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "KeyS") {
-	wsRequest["motor_l"] = isDown ? -motorSpeed : 0;
-	wsRequest["motor_r"] = isDown ? -motorSpeed : 0;
+	ard0Request["motor_l"] = isDown ? -motorSpeed : 0;
+	ard0Request["motor_r"] = isDown ? -motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "KeyA") {
-	wsRequest["motor_l"] = isDown ? -motorSpeed : 0;
-	wsRequest["motor_r"] = isDown ? motorSpeed : 0;
+	ard0Request["motor_l"] = isDown ? -motorSpeed : 0;
+	ard0Request["motor_r"] = isDown ? motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "KeyD") {
-	wsRequest["motor_l"] = isDown ? motorSpeed : 0;
-	wsRequest["motor_r"] = isDown ? -motorSpeed : 0;
+	ard0Request["motor_l"] = isDown ? motorSpeed : 0;
+	ard0Request["motor_r"] = isDown ? -motorSpeed : 0;
         if (isDown) {motorSpeedUp();} else {motorSpeedMin();}
     } else if (event.code == "ArrowLeft") {
-	wsRequest["cam_servo_h"] = isDown ? 1 : 0;
+	ard0Request["cam_servo_h"] = isDown ? 1 : 0;
     } else if (event.code == "ArrowRight") {
-	wsRequest["cam_servo_h"] = isDown ? -1 : 0;
+	ard0Request["cam_servo_h"] = isDown ? -1 : 0;
     } else if (event.code == "ArrowDown") {
-	wsRequest["cam_servo_v"] = isDown ? 1 : 0;
+	ard0Request["cam_servo_v"] = isDown ? 1 : 0;
     } else if (event.code == "ArrowUp") {
-	wsRequest["cam_servo_v"] = isDown ? -1 : 0;
+	ard0Request["cam_servo_v"] = isDown ? -1 : 0;
     } else if (event.code == "KeyL") {
         if (!isDown)
-	    wsRequest["lighting"] = (wsRequest["lighting"] + 1) % 2;
+	    ard0Request["lighting"] = (ard0Request["lighting"] + 1) % 2;
     } else if (event.code == "Home") {
-	wsRequest["cam_servo_h"] = 1090;
-	wsRequest["cam_servo_v"] = 1090;
+	ard0Request["cam_servo_h"] = 1090;
+	ard0Request["cam_servo_v"] = 1090;
     } else if (event.code == "Space") {
-	wsRequest["motor_l"] = 0;
-	wsRequest["motor_r"] = 0;
-	wsRequest["cam_servo_h"] = 0;
-	wsRequest["cam_servo_v"] = 0;
+	ard0Request["motor_l"] = 0;
+	ard0Request["motor_r"] = 0;
+	ard0Request["cam_servo_h"] = 0;
+	ard0Request["cam_servo_v"] = 0;
     }
-    sendWSRequest();
+    sendArd0Request();
     $("button[data-code=" + event.code + "]").toggleClass("down", isDown);
 }
 
@@ -103,19 +114,22 @@ function onButtonTouchEnd(e) {
     e.preventDefault();
 }
 
-function onWSResponse(event) {
-    var response = JSON.parse(event.data),
-        voltage = Math.ceil(response["voltage"] / 100) / 10;
-    $("#voltage").text(voltage);
-    if (voltage <= LOW_VOLTAGE) {
-	$("#voltage-symbol").html("&#x1faab;");
-    } else {
-	$("#voltage-symbol").html("&#x1f50b;");
+function onWSMessage(event) {
+    var resp = JSON.parse(event.data);
+    if (resp.type == "ard0") {
+	var v = Math.ceil(resp["voltage"] / 100) / 10;
+	$("#voltage").text(v);
+	if (v <= LOW_VOLTAGE) {
+	    $("#voltage-symbol").html("&#x1faab;");
+	} else {
+	    $("#voltage-symbol").html("&#x1f50b;");
+	}
     }
 }
 
 
-setInterval(sendWSRequest, 1000);
+setInterval(sendArd0Request, 1000);
+socket.addEventListener('message', onWSMessage);
 
 document.addEventListener("keydown", (event) => {
     onKeyEvent("keydown", event);
@@ -130,6 +144,32 @@ $(document).ready(function($) {
 	.on("mouseup", onButtonMouseUp)
 	.on("touchstart", onButtonTouchStart)
 	.on("touchend", onButtonTouchEnd);
-});
+    $("#camera-params-icon").click(function () {
+	$("#camera-params-table").fadeToggle();
+    });
+    $("#resolution").change(function () {
+	var size = this.value.split("x");
 
-socket.addEventListener('message', onWSResponse);
+	$("body").removeClass(
+	    "res"
+	    + camRequest["res_x"]
+	    + "x"
+	    + camRequest["res_y"]
+	);
+
+	camRequest["res_x"] = parseInt(size[0]);
+	camRequest["res_y"] = parseInt(size[1]);
+	sendCamRequest();
+
+	$("body").addClass(
+	    "res"
+	    + camRequest["res_x"]
+	    + "x"
+	    + camRequest["res_y"]
+	);
+    });
+    $("#quality").change(function () {
+	camRequest["quality"] = parseInt(this.value);
+	sendCamRequest();
+    });
+});

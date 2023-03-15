@@ -4,14 +4,13 @@ from contextlib import contextmanager
 
 from aiohttp import web
 
+from . import ard0, camera
 from .handlers import routes
-from .camera import create_camera, stop_camera
-from .motor_servo import create_serial, process_responses
 
 
 async def on_startup(app):
-    ser = app['motor_servo_serial']
-    task = asyncio.create_task(process_responses(ser, app))
+    ser = app['ard0_serial']
+    task = asyncio.create_task(ard0.process_responses(ser, app))
     app['tasks'].add(task)
 
 
@@ -27,17 +26,19 @@ def create_app():
     app = web.Application()
     app.add_routes(routes)
 
-    app['camera'], app['output'] = create_camera()
+    app['camera'], app['output'] = camera.create_camera()
     app['tasks'] = weakref.WeakSet()
     app['websockets'] = weakref.WeakSet()
 
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
-    with create_serial() as ser:
-        app['motor_servo_serial'] = ser
-        yield app
-
-    stop_camera(app['camera'])
-    del app['camera']
-    del app['output']
+    camera.start_camera(app['camera'], app['output'])
+    try:
+        with ard0.create_serial() as ser:
+            app['ard0_serial'] = ser
+            yield app
+    finally:
+        camera.stop_camera(app['camera'])
+        del app['camera']
+        del app['output']

@@ -5,17 +5,62 @@ body {
     padding: 0;
     font: 20px Arial, sans-serif;
 }
+body.res320x240 {
+    font-size: 10px;
+}
+body.res640x480 {
+    font-size: 20px;
+}
+body.res800x600 {
+    font-size: 25px;
+}
+body.res1024x768 {
+    font-size: 30px;
+}
+body.res1280x1024 {
+    font-size: 40px;
+}
+body.res1920x1080 {
+    font-size: 50px;
+}
 #display {
     position: relative;
-    width: 640px;
     margin: 0 auto;
     padding: 0;
+}
+body.res320x240 #display {
+    width: 320px;
+}
+body.res640x480 #display {
+    width: 640px;
+}
+body.res800x600 #display {
+    width: 800px;
+}
+body.res1024x768 #display {
+    width: 1024px;
+}
+body.res1280x1024 #display {
+    width: 1280px;
+}
+body.res1920x1080 #display {
+    width: 1920px;
 }
 #voltage-box {
     position: absolute;
     padding: 5px;
     top: 0;
     left: 0;
+}
+#camera-params {
+    position: absolute;
+    padding: 5px;
+    top: 0;
+    right: 0;
+    text-align: right;
+}
+#camera-params-icon:hover {
+    cursor: pointer;
 }
 #video-box {
     text-align: center;
@@ -46,13 +91,38 @@ body {
 }
 #button-box button {
     margin: 0;
-    width: 50px;
-    height: 50px;
     opacity: 0.2;
     font-size: inherit;
     color: black;
     background-color: white;
 }
+body.res320x240 #button-box button {
+    width: 25px;
+    height: 25px;
+}
+body.res640x480 #button-box button {
+    width: 50px;
+    height: 50px;
+}
+body.res800x600 #button-box button {
+    width: 70px;
+    height: 70px;
+}
+body.res1024x768 #button-box button {
+    width: 75px;
+    height: 75px;
+}
+body.res1280x1024 #button-box button {
+    width: 100px;
+    height: 100px;
+}
+body.res1920x1080 #button-box button {
+    width: 100px;
+    height: 100px;
+}
 #button-box button.down {
     background-color: #00ff00;
+}
+#camera-params {
+    padding: 5px;
 }

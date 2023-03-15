@@ -3,7 +3,7 @@ import threading
 
 from libcamera import controls, Transform
 from picamera2 import Picamera2
-from picamera2.encoders import MJPEGEncoder
+from picamera2.encoders import MJPEGEncoder, Quality
 from picamera2.outputs import FileOutput
 
 from .config import CAMERA_SIZE, CAMERA_TRANSFORM
@@ -26,18 +26,49 @@ class StreamingOutput(io.BufferedIOBase):
 
 
 def create_camera():
-    camera = Picamera2()
-    camera.configure(
-        camera.create_video_configuration(
+    cam = Picamera2()
+    cam.configure(
+        cam.create_video_configuration(
             main={'size': CAMERA_SIZE},
             transform=Transform(**CAMERA_TRANSFORM),
         )
     )
-    camera.set_controls({'AwbEnable': True})
+    cam.set_controls({'AwbEnable': True})
     output = StreamingOutput()
-    camera.start_recording(MJPEGEncoder(), FileOutput(output))
-    return (camera, output)
+    return (cam, output)
 
 
-def stop_camera(camera):
-    camera.stop_recording()
+def start_camera(cam, output, quality=Quality.MEDIUM):
+    cam.start_recording(
+        MJPEGEncoder(),
+        FileOutput(output),
+        quality=quality,
+    )
+
+
+def stop_camera(cam):
+    cam.stop_recording()
+
+
+def process_request(app, req):
+    cam = app['camera']
+    output = app['output']
+
+    stop_camera(cam)
+
+    cam.configure(
+        cam.create_video_configuration(
+            main={'size': (req['res_x'], req['res_y'])},
+            transform=Transform(**CAMERA_TRANSFORM),
+        )
+    )
+
+    quality = {
+        0: Quality.VERY_LOW,
+        1: Quality.LOW,
+        2: Quality.MEDIUM,
+        3: Quality.HIGH,
+        4: Quality.VERY_HIGH,
+    }[req['quality']]
+
+    start_camera(cam, output, quality=quality)

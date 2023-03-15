@@ -6,10 +6,34 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
         <script src="static/control.js"></script>
     </head>
-    <body>
+    <body class="res640x480">
         <div id="display">
 	    <div id="voltage-box">
 		<span id="voltage-symbol"></span> <span id="voltage">0</span>V
+	    </div>
+	    <div id="camera-params">
+		<span id="camera-params-icon">&#x2692;</span>
+		<table id="camera-params-table">
+		    <tr>
+			<td>Resolution:</td>
+			<td>
+			    <select id="resolution">
+				<option value="320x240">320x240</option>
+				<option value="640x480" selected="selected">640x480</option>
+				<option value="800x600">800x600</option>
+				<option value="1024x768">1024x768</option>
+				<option value="1280x1024">1280x1024</option>
+				<option value="1920x1080">1920x1080</option>
+			    </select>
+			</td>
+		    </tr>
+		    <tr>
+			<td>Quality:</td>
+			<td>
+			    <input id="quality" type="range" min="0" max="4" value="2"/>
+			</td>
+		    </tr>
+		</table>
 	    </div>
 	    <div id="video-box">
 		<img id="video" src="stream.mjpg" />
