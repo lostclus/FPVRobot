@@ -110,6 +110,7 @@ function onButtonTouchStart(e) {
     };
     onKeyEvent("keydown", event);
     e.preventDefault();
+    touchIntervals[event.code] = setInterval(onKeyEvent, 50, "keydown", event);
 }
 
 function onButtonTouchEnd(e) {
@@ -119,7 +120,6 @@ function onButtonTouchEnd(e) {
     onKeyEvent("keyup", event);
     e.preventDefault();
     clearInterval(touchIntervals[event.code]);
-    touchIntervals[event.code] = setInterval(onKeyEvent, 50, "keydown", event);
 }
 
 function onWSMessage(event) {
