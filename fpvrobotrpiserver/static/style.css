@@ -6,19 +6,19 @@ body {
     font: 20px Arial, sans-serif;
 }
 body.res320x240 {
-    font-size: 8px;
+    font-size: 9px;
 }
 body.res640x480 {
-    font-size: 16px;
+    font-size: 18px;
 }
 body.res800x600 {
-    font-size: 20px;
-}
-body.res1024x768 {
     font-size: 25px;
 }
-body.res1280x1024 {
+body.res1024x768 {
     font-size: 30px;
+}
+body.res1280x1024 {
+    font-size: 35px;
 }
 body.res1920x1080 {
     font-size: 40px;
