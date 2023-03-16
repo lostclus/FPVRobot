@@ -17,6 +17,7 @@ var ard0Request = {
     "cam_servo_v": 0,
     "lighting": 0,
 };
+var touchIntervals = {};
 
 function sendArd0Request() {
     socket.send(JSON.stringify(ard0Request));
@@ -79,6 +80,9 @@ function onKeyEvent(eventName, event) {
 	ard0Request["motor_r"] = 0;
 	ard0Request["cam_servo_h"] = 0;
 	ard0Request["cam_servo_v"] = 0;
+	for (const [k, v] of Object.entries(touchIntervals)) {
+	    clearInterval(v);
+	}
     }
     sendArd0Request();
     $("button[data-code=" + event.code + "]").toggleClass("down", isDown);
@@ -89,6 +93,7 @@ function onButtonMouseDown() {
 	code: $(this).attr("data-code"),
     };
     onKeyEvent("keydown", event);
+    touchIntervals[event.code] = setInterval(onKeyEvent, 50, "keydown", event);
 }
 
 function onButtonMouseUp() {
@@ -96,6 +101,7 @@ function onButtonMouseUp() {
 	code: $(this).attr("data-code"),
     };
     onKeyEvent("keyup", event);
+    clearInterval(touchIntervals[event.code]);
 }
 
 function onButtonTouchStart(e) {
@@ -112,6 +118,8 @@ function onButtonTouchEnd(e) {
     };
     onKeyEvent("keyup", event);
     e.preventDefault();
+    clearInterval(touchIntervals[event.code]);
+    touchIntervals[event.code] = setInterval(onKeyEvent, 50, "keydown", event);
 }
 
 function onWSMessage(event) {
