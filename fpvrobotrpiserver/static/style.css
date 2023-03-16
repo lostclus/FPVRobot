@@ -6,22 +6,22 @@ body {
     font: 20px Arial, sans-serif;
 }
 body.res320x240 {
-    font-size: 10px;
+    font-size: 8px;
 }
 body.res640x480 {
-    font-size: 20px;
+    font-size: 16px;
 }
 body.res800x600 {
-    font-size: 25px;
+    font-size: 20px;
 }
 body.res1024x768 {
-    font-size: 30px;
+    font-size: 25px;
 }
 body.res1280x1024 {
-    font-size: 40px;
+    font-size: 30px;
 }
 body.res1920x1080 {
-    font-size: 50px;
+    font-size: 40px;
 }
 #display {
     position: relative;
@@ -46,21 +46,37 @@ body.res1280x1024 #display {
 body.res1920x1080 #display {
     width: 1920px;
 }
+table, input, button, select {
+    font: inherit;
+}
 #voltage-box {
     position: absolute;
-    padding: 5px;
-    top: 0;
-    left: 0;
+    top: 0.25em;
+    right: 0.25em;
+    width: 4em;
 }
-#camera-params {
+#voltage::before {
+    content: "\1f50b";
+}
+#voltage.low::before {
+    content: "\1faab";
+}
+#camera-params-icon {
     position: absolute;
-    padding: 5px;
-    top: 0;
-    right: 0;
-    text-align: right;
+    top: 0.25em;
+    right: 4.25em;
+    width: 1.25em;
+}
+#camera-params-icon::before {
+    content: "\2692";
 }
 #camera-params-icon:hover {
     cursor: pointer;
+}
+#camera-params {
+    position: absolute;
+    top: 1.75em;
+    right: 0.25em;
 }
 #video-box {
     text-align: center;
@@ -87,42 +103,16 @@ body.res1920x1080 #display {
     text-align: center;
 }
 #robot-move, #camera-move {
-    width: 150px;
+    width: 9em;
 }
 #button-box button {
     margin: 0;
     opacity: 0.2;
-    font-size: inherit;
     color: black;
     background-color: white;
-}
-body.res320x240 #button-box button {
-    width: 25px;
-    height: 25px;
-}
-body.res640x480 #button-box button {
-    width: 50px;
-    height: 50px;
-}
-body.res800x600 #button-box button {
-    width: 70px;
-    height: 70px;
-}
-body.res1024x768 #button-box button {
-    width: 75px;
-    height: 75px;
-}
-body.res1280x1024 #button-box button {
-    width: 100px;
-    height: 100px;
-}
-body.res1920x1080 #button-box button {
-    width: 100px;
-    height: 100px;
+    width: 3em;
+    height: 3em;
 }
 #button-box button.down {
     background-color: #00ff00;
-}
-#camera-params {
-    padding: 5px;
 }

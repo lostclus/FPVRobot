@@ -1,5 +1,6 @@
 import asyncio
 import json
+import subprocess
 from pathlib import Path
 
 import aiohttp_jinja2
@@ -83,4 +84,10 @@ async def ws(request):
 async def camera_params(request):
     req_data = await request.json()
     camera.process_request(request.app, req_data)
+    return web.json_response({})
+
+
+@routes.post('/power-off')
+async def power_off(request):
+    subprocess.run(["sudo", "poweroff"])
     return web.json_response({})

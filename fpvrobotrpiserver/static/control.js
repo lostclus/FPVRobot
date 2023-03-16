@@ -117,12 +117,7 @@ function onWSMessage(event) {
     var resp = JSON.parse(event.data);
     if (resp.type == "ard0") {
 	var v = Math.ceil(resp["voltage"] / 100) / 10;
-	$("#voltage").text(v);
-	if (v <= LOW_VOLTAGE) {
-	    $("#voltage-symbol").html("&#x1faab;");
-	} else {
-	    $("#voltage-symbol").html("&#x1f50b;");
-	}
+	$("#voltage").text(v).toggleClass("low", v < LOW_VOLTAGE);
     }
 }
 
@@ -144,7 +139,7 @@ $(document).ready(function($) {
 	.on("touchstart", onButtonTouchStart)
 	.on("touchend", onButtonTouchEnd);
     $("#camera-params-icon").click(function () {
-	$("#camera-params-table").fadeToggle();
+	$("#camera-params").fadeToggle();
     });
     $("#resolution").change(function () {
 	var $body = $("body");
@@ -155,4 +150,9 @@ $(document).ready(function($) {
 	$body.addClass("res" + $(this).val());
     });
     $("#quality").change(sendCamRequest);
+    $("#voltage-box").click(function() {
+	if (window.confirm("Power off?")) {
+	    $.post('/power-off', JSON.stringify({}));
+	}
+    });
 });
