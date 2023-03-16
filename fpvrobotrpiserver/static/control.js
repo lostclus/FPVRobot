@@ -25,6 +25,7 @@ function sendArd0Request() {
 function sendCamRequest() {
     var size = $("#resolution").val().split("x"),
         data = {
+	"enabled": Boolean(parseInt($("#enable-camera").val())),
 	"res_x": parseInt(size[0]),
 	"res_y": parseInt(size[1]),
 	"quality": parseInt($("#quality").val()),
@@ -141,6 +142,7 @@ $(document).ready(function($) {
     $("#camera-params-icon").click(function () {
 	$("#camera-params").fadeToggle();
     });
+    $("#enable-camera").change(sendCamRequest);
     $("#resolution").change(function () {
 	var $body = $("body");
 	$("#resolution option").each(function() {

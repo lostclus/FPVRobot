@@ -65,7 +65,10 @@ def stop_camera(cam):
     cam.stop_recording()
 
 
-def get_curren_size(cam):
+def get_current_enabled(cam):
+    return cam.started
+
+def get_current_size(cam):
     return getattr(cam, '_fpv_size', CAMERA_SIZE)
 
 def get_current_quality(cam):
@@ -76,7 +79,8 @@ def process_request(app, req):
     cam = app['camera']
     output = app['output']
 
-    stop_camera(cam)
+    if cam.started:
+        stop_camera(cam)
 
     cam._fpv_size = (req['res_x'], req['res_y'])
     cam.configure(
@@ -87,4 +91,5 @@ def process_request(app, req):
     )
     cam._fpv_quality = INT_TO_QUALITY[req['quality']]
 
-    start_camera(cam, output)
+    if req['enabled']:
+        start_camera(cam, output)

@@ -18,11 +18,11 @@ routes.static('/static', ROOT_PATH / 'static')
 @aiohttp_jinja2.template('index.html')
 async def index(request):
     cam = request.app['camera']
-    res_x, res_y = camera.get_curren_size(cam)
-    quality = camera.get_current_quality(cam)
+    res_x, res_y = camera.get_current_size(cam)
     return {
+        'camera_enabled': int(camera.get_current_enabled(cam)),
         'resolution': f'{res_x}x{res_y}',
-        'quality': quality,
+        'quality': camera.get_current_quality(cam),
     }
 
 
