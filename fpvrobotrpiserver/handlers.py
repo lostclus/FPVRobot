@@ -2,6 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
+import aiohttp_jinja2
 from aiohttp import MultipartWriter, WSMsgType, web
 
 from . import ard0, camera
@@ -13,13 +14,15 @@ routes.static('/static', ROOT_PATH / 'static')
 
 
 @routes.get('/')
+@aiohttp_jinja2.template('index.html')
 async def index(request):
-    with open(ROOT_PATH / 'index.html') as fp:
-        text = fp.read()
-    return web.Response(
-        text=text,
-        content_type='text/html',
-    )
+    cam = request.app['camera']
+    res_x, res_y = camera.get_curren_size(cam)
+    quality = camera.get_current_quality(cam)
+    return {
+        'resolution': f'{res_x}x{res_y}',
+        'quality': quality,
+    }
 
 
 @routes.get('/stream.mjpg')
@@ -68,12 +71,16 @@ async def ws(request):
                     ser = request.app['ard0_serial']
                     req = ard0.new_requset(**req_data)
                     await ard0.write_request(ser, req)
-                if req_type == 'cam':
-                    cam = request.app['camera']
-                    camera.process_request(request.app, req_data)
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
         return ws
     finally:
         request.app['websockets'].discard(ws)
+
+
+@routes.post('/camera-params')
+async def camera_params(request):
+    req_data = await request.json()
+    camera.process_request(request.app, req_data)
+    return web.json_response({})

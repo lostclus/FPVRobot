@@ -1,11 +1,16 @@
 import asyncio
 import weakref
 from contextlib import contextmanager
+from pathlib import Path
 
+import aiohttp_jinja2
+import jinja2
 from aiohttp import web
 
 from . import ard0, camera
 from .handlers import routes
+
+ROOT_PATH = Path(__file__).parent
 
 
 async def on_startup(app):
@@ -25,6 +30,11 @@ async def on_shutdown(app):
 def create_app():
     app = web.Application()
     app.add_routes(routes)
+
+    aiohttp_jinja2.setup(
+        app,
+        loader=jinja2.FileSystemLoader(ROOT_PATH),
+    )
 
     app['camera'], app['output'] = camera.create_camera()
     app['tasks'] = weakref.WeakSet()

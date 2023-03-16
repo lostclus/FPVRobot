@@ -6,7 +6,19 @@ from picamera2 import Picamera2
 from picamera2.encoders import MJPEGEncoder, Quality
 from picamera2.outputs import FileOutput
 
-from .config import CAMERA_SIZE, CAMERA_TRANSFORM
+from .config import CAMERA_SIZE, CAMERA_QUALITY, CAMERA_TRANSFORM
+
+INT_TO_QUALITY = {
+    0: Quality.VERY_LOW,
+    1: Quality.LOW,
+    2: Quality.MEDIUM,
+    3: Quality.HIGH,
+    4: Quality.VERY_HIGH,
+}
+
+QUALITY_TO_INT = {
+    q: i for i, q in INT_TO_QUALITY.items()
+}
 
 
 class StreamingOutput(io.BufferedIOBase):
@@ -33,12 +45,15 @@ def create_camera():
             transform=Transform(**CAMERA_TRANSFORM),
         )
     )
+    cam._fpv_size = CAMERA_SIZE
+    cam._fpv_quality = INT_TO_QUALITY[CAMERA_QUALITY]
     cam.set_controls({'AwbEnable': True})
     output = StreamingOutput()
     return (cam, output)
 
 
-def start_camera(cam, output, quality=Quality.MEDIUM):
+def start_camera(cam, output):
+    quality = getattr(cam, '_fpv_quality', Quality.MEDIUM)
     cam.start_recording(
         MJPEGEncoder(),
         FileOutput(output),
@@ -50,25 +65,26 @@ def stop_camera(cam):
     cam.stop_recording()
 
 
+def get_curren_size(cam):
+    return getattr(cam, '_fpv_size', CAMERA_SIZE)
+
+def get_current_quality(cam):
+    return QUALITY_TO_INT[getattr(cam, '_fpv_quality', CAMERA_QUALITY)]
+
+
 def process_request(app, req):
     cam = app['camera']
     output = app['output']
 
     stop_camera(cam)
 
+    cam._fpv_size = (req['res_x'], req['res_y'])
     cam.configure(
         cam.create_video_configuration(
-            main={'size': (req['res_x'], req['res_y'])},
+            main={'size': cam._fpv_size},
             transform=Transform(**CAMERA_TRANSFORM),
         )
     )
+    cam._fpv_quality = INT_TO_QUALITY[req['quality']]
 
-    quality = {
-        0: Quality.VERY_LOW,
-        1: Quality.LOW,
-        2: Quality.MEDIUM,
-        3: Quality.HIGH,
-        4: Quality.VERY_HIGH,
-    }[req['quality']]
-
-    start_camera(cam, output, quality=quality)
+    start_camera(cam, output)

@@ -17,20 +17,19 @@ var ard0Request = {
     "cam_servo_v": 0,
     "lighting": 0,
 };
-var camRequest = {
-    "type": "cam",
-    "res_x": 640,
-    "res_y": 480,
-    "quality": 2,
-};
-
 
 function sendArd0Request() {
     socket.send(JSON.stringify(ard0Request));
 }
 
 function sendCamRequest() {
-    socket.send(JSON.stringify(camRequest));
+    var size = $("#resolution").val().split("x"),
+        data = {
+	"res_x": parseInt(size[0]),
+	"res_y": parseInt(size[1]),
+	"quality": parseInt($("#quality").val()),
+    };
+    $.post('/camera-params', JSON.stringify(data));
 }
 
 function motorSpeedUp() {
@@ -148,28 +147,12 @@ $(document).ready(function($) {
 	$("#camera-params-table").fadeToggle();
     });
     $("#resolution").change(function () {
-	var size = this.value.split("x");
-
-	$("body").removeClass(
-	    "res"
-	    + camRequest["res_x"]
-	    + "x"
-	    + camRequest["res_y"]
-	);
-
-	camRequest["res_x"] = parseInt(size[0]);
-	camRequest["res_y"] = parseInt(size[1]);
+	var $body = $("body");
+	$("#resolution option").each(function() {
+	    $body.removeClass("res" + $(this).val());
+	});
 	sendCamRequest();
-
-	$("body").addClass(
-	    "res"
-	    + camRequest["res_x"]
-	    + "x"
-	    + camRequest["res_y"]
-	);
+	$body.addClass("res" + $(this).val());
     });
-    $("#quality").change(function () {
-	camRequest["quality"] = parseInt(this.value);
-	sendCamRequest();
-    });
+    $("#quality").change(sendCamRequest);
 });

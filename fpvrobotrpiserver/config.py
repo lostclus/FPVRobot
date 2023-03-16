@@ -8,4 +8,4 @@ CAMERA_TRANSFORM = {
     'hflip': True,
     'vflip': True,
 }
-CAMERA_QUALITY = 90
+CAMERA_QUALITY = 2
