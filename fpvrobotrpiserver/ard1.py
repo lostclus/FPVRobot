@@ -6,9 +6,9 @@ from contextlib import contextmanager
 import aioserial
 
 from .config import (
-    MOTOR_SERVO_BAUDRATE,
-    MOTOR_SERVO_PORT,
-    MOTOR_SERVO_TIMEOUT,
+    ARD1_BAUDRATE,
+    ARD1_PORT,
+    ARD1_TIMEOUT,
 )
 
 MAGICK = b'FpvB'
@@ -94,18 +94,15 @@ async def process_responses(ser, app):
     while True:
         response = await read_response(ser)
         for ws in set(app['websockets']):
-            resp_data = {
-                'type': 'ard0',
-                **response_as_dict(response),
-            }
+            resp_data = response_as_dict(response)
             await ws.send_json(resp_data)
 
 
 @contextmanager
 def create_serial():
     with aioserial.AioSerial(
-        MOTOR_SERVO_PORT,
-        MOTOR_SERVO_BAUDRATE,
-        timeout=MOTOR_SERVO_TIMEOUT,
+        ARD1_PORT,
+        ARD1_BAUDRATE,
+        timeout=ARD1_TIMEOUT,
     ) as ser:
         yield ser

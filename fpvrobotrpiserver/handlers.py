@@ -6,7 +6,7 @@ from pathlib import Path
 import aiohttp_jinja2
 from aiohttp import MultipartWriter, WSMsgType, web
 
-from . import ard0, camera
+from . import ard1, camera
 
 ROOT_PATH = Path(__file__).parent
 
@@ -16,7 +16,7 @@ routes.static('/static', ROOT_PATH / 'static')
 
 @routes.get('/')
 @aiohttp_jinja2.template('index.html')
-async def index(request):
+async def index_handler(request):
     cam = request.app['camera']
     res_x, res_y = camera.get_current_size(cam)
     return {
@@ -27,7 +27,7 @@ async def index(request):
 
 
 @routes.get('/stream.mjpg')
-async def stream_mjpg(request):
+async def video_stream_handler(request):
     boundary = 'FRAME'
     resp = web.StreamResponse(
         headers={
@@ -56,7 +56,7 @@ async def stream_mjpg(request):
 
 
 @routes.get('/ws')
-async def ws(request):
+async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -67,11 +67,9 @@ async def ws(request):
                 await ws.pong()
             elif msg.type == WSMsgType.TEXT:
                 req_data = json.loads(msg.data)
-                req_type = req_data.pop('type')
-                if req_type == 'ard0':
-                    ser = request.app['ard0_serial']
-                    req = ard0.new_requset(**req_data)
-                    await ard0.write_request(ser, req)
+                ser = request.app['ard1_serial']
+                req = ard1.new_requset(**req_data)
+                await ard1.write_request(ser, req)
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
@@ -80,14 +78,14 @@ async def ws(request):
         request.app['websockets'].discard(ws)
 
 
-@routes.post('/camera-params')
-async def camera_params(request):
+@routes.post('/camera')
+async def camera_handler(request):
     req_data = await request.json()
     camera.process_request(request.app, req_data)
     return web.json_response({})
 
 
 @routes.post('/power-off')
-async def power_off(request):
+async def power_off_handler(request):
     subprocess.run(["sudo", "poweroff"])
     return web.json_response({})

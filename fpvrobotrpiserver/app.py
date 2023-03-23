@@ -7,15 +7,15 @@ import aiohttp_jinja2
 import jinja2
 from aiohttp import web
 
-from . import ard0, camera
+from . import ard1, camera
 from .handlers import routes
 
 ROOT_PATH = Path(__file__).parent
 
 
 async def on_startup(app):
-    ser = app['ard0_serial']
-    task = asyncio.create_task(ard0.process_responses(ser, app))
+    ser = app['ard1_serial']
+    task = asyncio.create_task(ard1.process_responses(ser, app))
     app['tasks'].add(task)
 
 
@@ -45,8 +45,8 @@ def create_app():
 
     camera.start_camera(app['camera'], app['output'])
     try:
-        with ard0.create_serial() as ser:
-            app['ard0_serial'] = ser
+        with ard1.create_serial() as ser:
+            app['ard1_serial'] = ser
             yield app
     finally:
         camera.stop_camera(app['camera'])
