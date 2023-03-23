@@ -94,7 +94,10 @@ async def process_responses(ser, app):
     while True:
         response = await read_response(ser)
         for ws in set(app['websockets']):
-            resp_data = response_as_dict(response)
+            resp_data = {
+                **response_as_dict(response),
+                'type': 'ard1',
+            }
             await ws.send_json(resp_data)
 
 

@@ -8,9 +8,12 @@ const LOW_VOLTAGE = 9.0;
 const wsAddr = (document.location.href + 'ws').replace(/^http/, 'ws');
 const socket = new WebSocket(wsAddr);
 
+var isSessionActive = false;
+var ard1RequestInterval = null;
 var motorSpeed = MOTOR_SPEED_MIN;
 
 var ard1Request = {
+    "type": "ard1",
     "motor_l": 0,
     "motor_r": 0,
     "cam_servo_h": 0,
@@ -18,6 +21,13 @@ var ard1Request = {
     "lighting": 0,
 };
 var touchIntervals = {};
+
+function sendSessionStateRequest() {
+    socket.send(JSON.stringify({
+	"type": "session",
+	"is_active": isSessionActive,
+    }));
+}
 
 function sendArd1Request() {
     socket.send(JSON.stringify(ard1Request));
@@ -43,6 +53,7 @@ function motorSpeedMin() {
 }
 
 function onKeyEvent(eventName, event) {
+    if (!isSessionActive) return;
     var isDown = eventName == "keydown";
 
     if (event.code == "KeyW") {
@@ -123,13 +134,31 @@ function onButtonTouchEnd(e) {
 }
 
 function onWSMessage(event) {
-    var resp = JSON.parse(event.data);
-    var v = Math.ceil(resp["voltage"] / 100) / 10;
-    $("#voltage").text(v).toggleClass("low", v < LOW_VOLTAGE);
+    var resp = JSON.parse(event.data),
+	respType = resp["type"];
+    if (respType == "ard1") {
+	var v = Math.ceil(resp["voltage"] / 100) / 10;
+	$("#voltage").text(v).toggleClass("low", v < LOW_VOLTAGE);
+    } else if (respType == "session") {
+	isSessionActive = resp["is_active"];
+	if (isSessionActive) {
+	    if (!ard1RequestInterval) {
+		ard1RequestInterval = setInterval(
+		    sendArd1Request,
+		    ARD1_REQEST_INTERVAL
+		);
+	    }
+	} else {
+	    if (ard1RequestInterval) {
+		clearInterval(ard1RequestInterval);
+		ard1RequestInterval = null;
+	    }
+	}
+	$("#session-state-box").toggleClass("active", isSessionActive);
+    }
 }
 
 
-setInterval(sendArd1Request, ARD1_REQEST_INTERVAL);
 socket.addEventListener('message', onWSMessage);
 
 document.addEventListener("keydown", (event) => {
@@ -158,6 +187,10 @@ $(document).ready(function($) {
 	$body.addClass("res" + $(this).val());
     });
     $("#quality").change(sendCamRequest);
+    $("#session-state-box").click(function() {
+	isSessionActive = !isSessionActive;
+	sendSessionStateRequest();
+    });
     $("#voltage-box").click(function() {
 	if (window.confirm("Power off?")) {
 	    $.post('/power-off', JSON.stringify({}));

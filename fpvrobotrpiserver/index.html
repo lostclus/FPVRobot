@@ -8,10 +8,7 @@
     </head>
     <body class="res{{ resolution }}">
         <div id="display">
-	    <div id="voltage-box">
-		<span id="voltage">0</span>V
-	    </div>
-	    <div id="camera-params-icon"></div>
+	    <div id="camera-params-icon" title="Settings"></div>
 	    <div id="camera-params" style="display:none">
 		<table>
 		    <tr>
@@ -40,6 +37,10 @@
 			</td>
 		    </tr>
 		</table>
+	    </div>
+	    <div id="session-state-box" title="Session state"></div>
+	    <div id="voltage-box">
+		<span id="voltage">0</span>V
 	    </div>
 	    <div id="video-box">
 		<img id="video" src="stream.mjpg" />

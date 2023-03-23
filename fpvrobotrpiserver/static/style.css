@@ -23,6 +23,7 @@ body.res1280x1024 {
 body.res1920x1080 {
     font-size: 40px;
 }
+
 #display {
     position: relative;
     margin: 0 auto;
@@ -46,29 +47,19 @@ body.res1280x1024 #display {
 body.res1920x1080 #display {
     width: 1920px;
 }
+
 table, input, button, select {
     font: inherit;
 }
-#voltage-box {
-    position: absolute;
-    top: 0.25em;
-    right: 0.25em;
-    width: 4em;
-}
-#voltage::before {
-    content: "\1f50b";
-}
-#voltage.low::before {
-    content: "\1faab";
-}
+
 #camera-params-icon {
     position: absolute;
     top: 0.25em;
-    right: 4.25em;
+    right: 5.5em;
     width: 1.25em;
 }
 #camera-params-icon::before {
-    content: "\2692";
+    content: "\1f39a";
 }
 #camera-params-icon:hover {
     cursor: pointer;
@@ -78,6 +69,39 @@ table, input, button, select {
     top: 1.75em;
     right: 0.25em;
 }
+
+#session-state-box {
+    position: absolute;
+    top: 0.25em;
+    right: 4.25em;
+    width: 1.25em;
+}
+#session-state-box:hover {
+    cursor: pointer;
+}
+#session-state-box::before {
+    content: "\1f512";
+}
+#session-state-box.active::before {
+    content: "\1f44c";
+}
+
+#voltage-box {
+    position: absolute;
+    top: 0.25em;
+    right: 0.25em;
+    width: 4em;
+}
+#voltage-box:hover {
+    cursor: pointer;
+}
+#voltage::before {
+    content: "\1f50b";
+}
+#voltage.low::before {
+    content: "\1faab";
+}
+
 #video-box {
     text-align: center;
 }
@@ -85,6 +109,7 @@ table, input, button, select {
     margin: 0;
     padding: 0 0;
 }
+
 #button-box {
     position: absolute;
     width: 100%;
