@@ -52,9 +52,9 @@ Supplies:
 Software
 ========
 
-  * The ``ard1`` directory contains Arduino sketch
-  * The ``fpvrobotrpiserver`` directory contains web server application written
-    in Python/aiohttp to run on Raspberry Pi
+* The ``ard1`` directory contains Arduino sketch
+* The ``fpvrobotrpiserver`` directory contains web server application written
+  in Python/aiohttp to run on Raspberry Pi
 
 Arduino sketch
 --------------
@@ -65,9 +65,9 @@ Web server
 ----------
 
 To run web server application on Raspberry Pi firstly download and install
-Raspberry Pi OS to memory card. Then configure Wi-Fi and enable SSH. Determine
-Raspberry Pi IP address using `sudo ip addr`. Connect via SSH and install
-these packages:
+`Raspberry Pi OS <https://www.raspberrypi.com/software/>`_ to memory card. Then
+configure Wi-Fi and enable SSH. Determine Raspberry Pi IP address using ``sudo
+ip addr``. Connect via SSH and install these packages:
 
 .. code::
 
