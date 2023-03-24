@@ -1,5 +1,8 @@
 import os
 
+HOST = os.getenv('HOST', '0.0.0.0')
+PORT = int(os.getenv('PORT', 8080))
+
 ARD1_PORT = os.getenv('ARD1_PORT', '/dev/serial0')
 ARD1_BAUDRATE = int(os.getenv('ARD1_BAUDRATE', 9600))
 ARD1_TIMEOUT = float(os.getenv('ARD1_TIMEOUT', 0.1))
