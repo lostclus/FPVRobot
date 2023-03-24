@@ -8,6 +8,7 @@ import jinja2
 from aiohttp import web
 
 from . import ard1, camera
+from .config import AUTH_USER, AUTH_PASSWORD
 from .handlers import routes
 
 ROOT_PATH = Path(__file__).parent
@@ -35,6 +36,12 @@ def create_app():
         app,
         loader=jinja2.FileSystemLoader(ROOT_PATH),
     )
+
+    if AUTH_USER and AUTH_PASSWORD:
+        from aiohttp_basicauth import BasicAuthMiddleware
+        app.middlewares.append(
+            BasicAuthMiddleware(username=AUTH_USER, password=AUTH_PASSWORD)
+        )
 
     app['camera'], app['output'] = camera.create_camera()
     app['tasks'] = weakref.WeakSet()
