@@ -121,6 +121,8 @@ Web server application can be configured using environment variables.
    ======================= =============================== =============
    Variable                Description                     Default value
    ======================= =============================== =============
+   HOST                    Host for HTTP server            0.0.0.0
+   PORT                    Port for HTTP server            8080
    ARD1_PORT               Serial port to communicate with /dev/serial0
                            Arduino
    ARD1_BAUDRATE           Boud rate of serial connection  9600
