@@ -33,21 +33,22 @@ Supplies:
 * MX1508 Dual DC Motor Driver Module
 * Pan and Tilt Stand
   [https://www.electromaker.io/shop/product/assemb-mini-pan-tilt-kit-wmicro-servos]
-* 2x SG90 Servo
-* LM2596S Step Down DC Converter
-* MP1584EN Step Down DC Converter
-* AMS1117 5.0V (module or single chip)
-* AMS1117 3.3V (module or single chip)
+* 2 x SG90 Servo
+* LM2596S Step Down DC-DC Converter
+* MP1584EN Step Down DC-DC Converter
+* AMS1117 5.0V Voltage Regulator (module or single chip)
+* AMS1117 3.3V Voltage Regulator (module or single chip)
 * 3S 18650 Batteries Holder Case
-* 3x 18650 Li-Ion Batteries
+* 3 x 18650 Li-Ion Batteries
+* Switch like SS12D07
 * 30K resistor
 * 10K resistor
 * 3K resistor
-* NPN Transistor 2N2222A
-* 2x 10mF capacitor (if using AMS1117 as single chip)
-* 2x 22mF capacitor (if using AMS1117 as single chip)
-* 5x 3mm LEDs
-* Wires, screws, PCBs, etc.
+* 2N2222A NPN Transistor
+* 2 x 10uF tantalum capacitor (if using AMS1117 as single chip)
+* 2 x 22uF tantalum capacitor (if using AMS1117 as single chip)
+* 5 x 3mm white LEDs
+* Wires, screws, PCB protoboards, etc.
 
 Software
 ========
@@ -59,7 +60,8 @@ Software
 Arduino sketch
 --------------
 
-The Arduino sketch requires `servo library <https://www.arduino.cc/reference/en/libraries/servo/>`_.
+The Arduino sketch requires `servo library
+<https://www.arduino.cc/reference/en/libraries/servo/>`_.
 
 Web server
 ----------
@@ -101,3 +103,49 @@ Run application:
 
 Then in other device that connected to same local network open web browser and
 go to http://<IP>:8080
+
+Client Interface
+----------------
+
+Robot movement, camera movement and lighting control can be via keyboard, mouse
+or touchscreen.
+
+.. table:: Keyboard control
+   :widths: auto
+
+   =========== =================
+   Key         Action
+   =========== =================
+   W           Move forward
+   S           Move backward
+   A           Turn left
+   D           Turn right
+   Space       Stop motors
+   Up arrow    Turn camera up
+   Down arrow  Turn camera down
+   Left arrow  Turn camera left
+   Right arrow Turn camera right
+   Home        Center camera
+   L           Toggle lighting
+   =========== =================
+
+
+.. table:: Top pannel
+   :widths: auto
+
+   ============== ============================ =====================
+   Icon           Description                  Click Action
+   ============== ============================ =====================
+   |level slider| Camera settings              Toggle settings view
+   |ok hand|      Session is active            Make session not active
+   |locked|       Session is not active        Make session active
+   |battery|      Normal battery voltage level Power off Raspberry Pi
+   |low battery|  Low battery voltage level    Power off Raspberry Pi
+   ============== ============================ =====================
+
+.. |level slider| unicode:: 0x1f39a
+.. |ok hand| unicode:: 0x1f44c
+.. |locked| unicode:: 0x1f512
+.. |battery| unicode:: 0x1f50b
+.. |low battery| unicode:: 0x1faab
+   :trim:
