@@ -86,6 +86,12 @@ Then install aioserial:
 
    sudo pip3 install aioserial
 
+Optionally for HTTP basic authentication install aiohttp-basicauth
+
+.. code::
+
+   sudo pip3 install aiohttp_basicauth
+
 Clone this repository:
 
 .. code::
@@ -104,7 +110,29 @@ Run application:
 Then in other device that connected to same local network open web browser and
 go to http://<IP>:8080
 
-Client Interface
+Configuration
+-------------
+
+Web server application can be configured using environment variables.
+
+.. table:: Environment variables
+   :widths: auto
+
+   ======================= =============================== =============
+   Variable                Description                     Default value
+   ======================= =============================== =============
+   ARD1_PORT               Serial port to communicate with /dev/serial0
+                           Arduino
+   ARD1_BAUDRATE           Boud rate of serial connection  9600
+   ARD1_TIMEOUT            Timeout of serial connection    0.1
+   DEFAULT_CAMERA_SIZE     Default camera resolution       640x480
+   DEFAULT_CAMERA_QUALITY  Default camera quality          2
+   CAMERA_TRANSFORM        Camera transformation           hflip,vflip
+   AUTH_USER               User name for authentication
+   AUTH_PASSWORD           Password for authentication
+   ======================= =============================== =============
+
+User Interface
 ----------------
 
 Robot movement, camera movement and lighting control can be via keyboard, mouse
